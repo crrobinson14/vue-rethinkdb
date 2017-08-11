@@ -4,7 +4,7 @@
 
 ### Arrays
 
-should render correct contents   <span style="color:green">✓</span>. `(1ms)`
+should render correct contents   <span style="color:green">✓</span>. `(0ms)`
 
 ```js
 function (done) {
