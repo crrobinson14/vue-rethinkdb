@@ -1,0 +1,47 @@
+# Common IDE and project paths
+.idea/
+node_modules/
+log/*
+pids/*
+
+# Build artifacts
+.nyc_output/
+coverage/
+public/
+
+# Common no-no files to commit
+*.pem
+*.log
+*.pid
+*.tgz
+*.zip
+*.ai
+*.eps
+*.psd
+*.sql
+*.sqlite
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python is sometimes used even in Node projects
+*.pyo
+*.pyc
+*~
+
+# Terraform files
+.tfplan
+*.tfstate.backup
+*.retry
+
+*.tfvars
+!sample.tfvars
+
+aws-*.json
+!aws-sample.json

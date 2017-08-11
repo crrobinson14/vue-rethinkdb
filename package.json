@@ -1,0 +1,81 @@
+{
+  "name": "@webng/vue-firebase-data",
+  "version": "1.0.0",
+  "description": "VueJS Firebase Database Support",
+  "main": "src/index.js",
+  "scripts": {
+    "bump": "bump-npm.sh",
+    "notify": "notify-slack-npm.sh",
+    "build": "NODE_ENV=production webpack --progress --hide-modules --config build/webpack.config.js",
+    "lint": "eslint --ext .js,.vue src",
+    "test": "cross-env BABEL_ENV=test karma start test/karma.conf.js --single-run",
+    "docs_jsdoc": "node_modules/.bin/jsdoc2md --private -c jsdoc2md.json src/*.js > docs/firebasedata.md",
+    "docs_readme": "cp README.md docs/index.md",
+    "docs_mkdocs": "mkdocs build",
+    "docs": "npm run docs_jsdoc && npm run docs_readme && npm run docs_mkdocs"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "registry": "http://jfrog.theirweb.net:8081/artifactory/api/npm/webng-npm/"
+  },
+  "eslintIgnore": [
+    "dist"
+  ],
+  "nyc": {
+    "sourceMap": false,
+    "instrument": false
+  },
+  "devDependencies": {
+    "@webng/standards": "^1.0.12",
+    "babel-core": "^6.25.0",
+    "babel-loader": "^7.1.1",
+    "babel-plugin-istanbul": "^4.1.4",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-jsdoc-to-assert": "^4.0.0",
+    "babel-preset-latest": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "chai": "^4.1.0",
+    "cross-env": "^5.0.5",
+    "css-loader": "^0.28.4",
+    "dirty-chai": "^2.0.1",
+    "eslint": "^4.3.0",
+    "eslint-config-airbnb-base": "^11.3.1",
+    "eslint-friendly-formatter": "^3.0.0",
+    "eslint-loader": "^1.9.0",
+    "eslint-plugin-html": "^3.1.1",
+    "eslint-plugin-import": "^2.7.0",
+    "eslint-plugin-jsdoc": "^3.1.2",
+    "firebase": "^4.2.0",
+    "jsdoc-to-markdown": "^3.0.0",
+    "karma": "^1.7.0",
+    "karma-chai": "^0.1.0",
+    "karma-coverage": "^1.1.1",
+    "karma-dirty-chai": "^1.0.2",
+    "karma-mocha": "^1.3.0",
+    "karma-mocha-own-reporter": "^1.1.2",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "karma-phantomjs-shim": "^1.4.0",
+    "karma-sinon-chai": "^1.3.1",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-spec-reporter": "0.0.31",
+    "@webng/karma-markdown-reporter": "0.0.1",
+    "karma-webpack": "^2.0.4",
+    "mocha": "^3.5.0",
+    "mocha-markdown-extended-reporter": "0.0.0",
+    "nyc": "^11.1.0",
+    "webpack": "^3.5.3",
+    "webpack-merge": "^4.1.0"
+  },
+  "engines": {
+    "node": ">= 4.0.0",
+    "npm": ">= 3.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions"
+  ],
+  "dependencies": {
+    "vue": "^2.4.2"
+  }
+}
