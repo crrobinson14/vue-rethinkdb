@@ -1,26 +1,33 @@
+import Vue from 'vue';
+import Value from '../components/Value.vue';
+import VueFirebaseData from '../../src';
+import firebaseConfig from '../firebase.json';
+
+const firebase = require('firebase');
 const chai = require('chai');
 const dirtyChai = require('dirty-chai');
 
-var expect = chai.expect;
+const expect = chai.expect;
 
 chai.use(dirtyChai);
 
-// var Vue = require('vue');
-// var Value = require('./Value.vue');
+firebase.initializeApp(firebaseConfig);
+Vue.use(VueFirebaseData);
 
 describe('Values', function() {
     it('should render correct contents', function(done) {
-        expect(1).to.equal(1);
-        // const Constructor = Vue.extend(Value);
-        // const vm = new Constructor().$mount();
-        //
-        // expect(vm.$el.querySelector('.icon').textContent)
-        //     .to.equal('Copyright © 2017 Snap Interactive, Inc. All Rights Reserved.');
-        //
-        // Vue.nextTick(function() {
-        //     expect(vm.$el.textContent).toBe('Static Hosting');
-        //     done();
-        // });
-        done();
+        this.timeout(5000);
+
+        const Constructor = Vue.extend(Value);
+        const vm = new Constructor().$mount();
+
+        expect(vm.$el.querySelector('span').textContent).to.equal('');
+
+        vm.$watch('record', function() {
+            Vue.nextTick(function() {
+                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                done();
+            });
+        });
     });
 });

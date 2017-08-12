@@ -1,4 +1,4 @@
-var Vue = require('vue');
+var Vue;
 
 // Create or set a reactive field in a vm.
 function defineReactive(vm, key, val) {
@@ -28,7 +28,7 @@ function createValueRecord(snapshot) {
 
 // Create a record that tracks a single value
 function createIndexRecord(snapshot) {
-    const record = {};
+    var record = {};
     record.$$index = snapshot.val();
     record.$$key = snapshot.key;
     record.$$ref = snapshot.ref;
@@ -58,12 +58,12 @@ function indexForKey(array, key) {
  * @param {object} source
  */
 function bindAsArray(vm, key, source) {
-    const array = [];
+    var array = [];
     defineReactive(vm, key, array);
 
     source.array.on('child_added', function(snapshot, prevKey) {
-        const index = prevKey ? indexForKey(array, prevKey) + 1 : 0;
-        const entry = createValueRecord(snapshot);
+        var index = prevKey ? indexForKey(array, prevKey) + 1 : 0;
+        var entry = createValueRecord(snapshot);
         array.splice(index, 0, entry);
 
         if (source.onChildAdded) {
@@ -72,19 +72,19 @@ function bindAsArray(vm, key, source) {
     });
 
     source.array.on('child_removed', function(snapshot) {
-        const index = indexForKey(array, snapshot.key);
+        var index = indexForKey(array, snapshot.key);
         array.splice(index, 1);
     });
 
     source.array.on('child_changed', function(snapshot) {
-        const index = indexForKey(array, snapshot.key);
+        var index = indexForKey(array, snapshot.key);
         array.splice(index, 1, createValueRecord(snapshot));
     });
 
     source.array.on('child_moved', function(snapshot, prevKey) {
-        const index = indexForKey(array, snapshot.key);
-        const record = array.splice(index, 1)[0];
-        const newIndex = prevKey ? indexForKey(array, prevKey) + 1 : 0;
+        var index = indexForKey(array, snapshot.key);
+        var record = array.splice(index, 1)[0];
+        var newIndex = prevKey ? indexForKey(array, prevKey) + 1 : 0;
         array.splice(newIndex, 0, record);
     });
 
@@ -106,15 +106,16 @@ function bindAsArray(vm, key, source) {
  * @param {object} source
  */
 function bindAsIndexedArray(vm, key, source) {
-    const indexArray = [];
+    var indexArray = [];
     defineReactive(vm, key, indexArray);
 
     source.indexArray.on('child_added', function(indexSnapshot, prevKey) {
-        const index = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
-        const indexRecord = createIndexRecord(indexSnapshot);
+        var index = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
+        var indexRecord = createIndexRecord(indexSnapshot);
+        var valueSource;
         indexArray.splice(index, 0, indexRecord);
 
-        const valueSource = source.valueLookup.call(vm, indexSnapshot);
+        valueSource = source.valueLookup.call(vm, indexSnapshot);
         valueSource.on('value', function(snapshot) {
             indexRecord.value = snapshot.val();
             indexRecord.$$valueKey = snapshot.key;
@@ -132,20 +133,20 @@ function bindAsIndexedArray(vm, key, source) {
     // TODO: We memleak here until the collection is destroyed because we don't clean up the listener
     // even though we could here.
     source.indexArray.on('child_removed', function(snapshot) {
-        const index = indexForKey(indexArray, snapshot.key);
+        var index = indexForKey(indexArray, snapshot.key);
         indexArray.splice(index, 1);
     });
 
     // TODO: We don't process this event yet, should we?
     // source.indexArray.on('child_changed', snapshot => {
-    //     const index = indexForKey(indexArray, snapshot.key);
+    //     var index = indexForKey(indexArray, snapshot.key);
     //     indexArray.splice(index, 1, createIndexValueRecord(snapshot));
     // });
 
     source.indexArray.on('child_moved', function(snapshot, prevKey) {
-        const index = indexForKey(indexArray, snapshot.key);
-        const record = indexArray.splice(index, 1)[0];
-        const newIndex = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
+        var index = indexForKey(indexArray, snapshot.key);
+        var record = indexArray.splice(index, 1)[0];
+        var newIndex = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
         indexArray.splice(newIndex, 0, record);
     });
 
@@ -169,8 +170,7 @@ function bindAsValue(vm, key, source) {
         if (source.onValue) {
             source.onValue.call(vm, snapshot);
         }
-    })
-    ;
+    });
 
     vm.$firebaseSources.push(source.value);
 }
@@ -195,31 +195,34 @@ function bind(vm, fieldName, source) {
 }
 
 module.exports = {
-    install: function(V) {
-        V.mixin({
+    install: function(_Vue) {
+        Vue = _Vue;
+        _Vue.mixin({
             created: function() {
                 // We save a copy of these so we only ever call the definition mechanism once, if it's a function.
-                const bindings = ((typeof this.$options.firebaseData === 'function')
-                    ? this.$options.firebaseData.call(this)
-                    : this.$options.firebaseData);
+                var vm = this;
+                var bindings = ((typeof vm.$options.firebaseData === 'function')
+                    ? vm.$options.firebaseData.call(vm)
+                    : vm.$options.firebaseData);
 
                 if (bindings) {
-                    this.$firebaseBindings = bindings;
-                    this.$firebaseSources = [];
+                    vm.$firebaseBindings = bindings;
+                    vm.$firebaseSources = [];
                     Object.keys(bindings).forEach(function(key) {
-                        bind(this, key, bindings[key]);
+                        bind(vm, key, bindings[key]);
                     });
                 }
             },
 
             beforeDestroy: function() {
-                if (this.$firebaseBindings) {
-                    this.$firebaseSources.forEach(function(listener) {
+                var vm = this;
+                if (vm.$firebaseBindings) {
+                    vm.$firebaseSources.forEach(function(listener) {
                         listener.off();
                     });
 
-                    delete this.$firebaseSources;
-                    delete this.$firebaseBindings;
+                    delete vm.$firebaseSources;
+                    delete vm.$firebaseBindings;
                 }
             }
         });

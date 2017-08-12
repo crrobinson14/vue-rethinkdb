@@ -1,20 +1,21 @@
 <template>
-    <span>{{ val }}</span>
+    <div>
+        <span>{{ record.value }}</span>
+    </div>
 </template>
 
 <script>
-    const firebase = require('firebase');
+    import firebase from 'firebase';
 
     export default {
         name: 'value',
-        data() {
-            return {};
-        },
+        data: () => ({}),
         firebaseData() {
             return {
-                // Bind "rule" to a discrete value. Will produce `ruleName: { $$key, $$ref, value: 'XYZ' }`.
-                val: { value: firebase.database().ref('/services/hosting/name') },
+                record: {
+                    value: firebase.database().ref('/services/hosting/name')
+                },
             };
-        },
+        }
     };
 </script>
