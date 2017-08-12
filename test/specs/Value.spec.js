@@ -1,8 +1,8 @@
 import Vue from 'vue';
 import Value from '../components/Value.vue';
-import VueFirebaseData from '../../src';
 import firebaseConfig from '../firebase.json';
 
+const VueFirebaseData = require('../../src');
 const firebase = require('firebase');
 const chai = require('chai');
 const dirtyChai = require('dirty-chai');
@@ -15,7 +15,7 @@ firebase.initializeApp(firebaseConfig);
 Vue.use(VueFirebaseData);
 
 describe('Values', function() {
-    it('should render correct contents', function(done) {
+    it('should render values correctly', function(done) {
         this.timeout(5000);
 
         const Constructor = Vue.extend(Value);

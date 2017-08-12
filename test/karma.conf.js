@@ -6,10 +6,12 @@ module.exports = function(config) {
         frameworks: ['mocha', 'dirty-chai'],
         reporters: ['spec', 'coverage', 'markdown'],
         files: [
-            'specs/*.js'
+            'specs/*.js',
+            '../src/*.js',
         ],
         preprocessors: {
-            'specs/*.js': ['webpack', 'sourcemap']
+            'specs/*.js': ['webpack'],
+            '../src/*.js': ['webpack', 'coverage'],
         },
         port: 9876,
         colors: true,
@@ -21,6 +23,7 @@ module.exports = function(config) {
             noInfo: true
         },
         coverageReporter: {
+            includeAllSources: true,
             dir: '../coverage',
             reporters: [
                 { type: 'html', subdir: '.' },
@@ -47,6 +50,7 @@ module.exports = function(config) {
         ],
         markdownReporter: {
             output: 'docs/test.md'
-        }
+        },
+        singleRun: true
     });
 };
