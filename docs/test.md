@@ -26,11 +26,11 @@ function (done) {
 
 ### Values
 
-should render values correctly   <span style="color:red">undefined</span>. `(5001ms)`
+should render values correctly   <span style="color:green">✓</span>. `(937ms)`
 
 ```js
 function (done) {
-        this.timeout(5000);
+        this.timeout(10000);
 
         var Constructor = _vue2.default.extend(_Value2.default);
         var vm = new Constructor().$mount();

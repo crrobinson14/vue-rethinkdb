@@ -10,8 +10,8 @@ module.exports = function(config) {
             '../src/*.js',
         ],
         preprocessors: {
-            'specs/*.js': ['webpack'],
-            '../src/*.js': ['webpack', 'coverage'],
+            'specs/*.js': ['sourcemap', 'webpack'],
+            '../src/*.js': ['coverage', 'sourcemap', 'webpack'],
         },
         port: 9876,
         colors: true,

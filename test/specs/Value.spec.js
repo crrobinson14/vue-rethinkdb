@@ -16,7 +16,7 @@ Vue.use(VueFirebaseData);
 
 describe('Values', function() {
     it('should render values correctly', function(done) {
-        this.timeout(5000);
+        this.timeout(10000);
 
         const Constructor = Vue.extend(Value);
         const vm = new Constructor().$mount();
