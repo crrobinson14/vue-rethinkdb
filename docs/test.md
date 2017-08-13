@@ -2,31 +2,57 @@
 
 ## PhantomJS 2.1.1 (Mac OS X 0.0.0)
 
-### Arrays
+### Collections
 
-should render correct contents   <span style="color:green">✓</span>. `(1ms)`
+should render values correctly   <span style="color:green">✓</span>. `(3122ms)`
 
 ```js
 function (done) {
-        expect(1).to.equal(1);
-        // const Constructor = Vue.extend(Value);
-        // const vm = new Constructor().$mount();
-        //
-        // expect(vm.$el.querySelector('.icon').textContent)
-        //     .to.equal('Copyright © 2017 Snap Interactive, Inc. All Rights Reserved.');
-        //
-        // Vue.nextTick(function() {
-        //     expect(vm.$el.textContent).toBe('Static Hosting');
-        //     done();
-        // });
-        done();
+        // FIXME: These tests need to be written
+        this.timeout(10000);
+
+        var Constructor = _vue2.default.extend(_Collection2.default);
+        var vm = new Constructor().$mount();
+
+        expect(vm.$el.querySelector('span').textContent).to.equal('');
+
+        vm.$watch('record', function () {
+            _vue2.default.nextTick(function () {
+                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                done();
+            });
+        });
+    }
+```
+
+
+### Indexed Collections
+
+should render values correctly   <span style="color:green">✓</span>. `(671ms)`
+
+```js
+function (done) {
+        // FIXME: These tests need to be written
+        this.timeout(10000);
+
+        var Constructor = _vue2.default.extend(_IndexedCollection2.default);
+        var vm = new Constructor().$mount();
+
+        expect(vm.$el.querySelector('span').textContent).to.equal('');
+
+        vm.$watch('record', function () {
+            _vue2.default.nextTick(function () {
+                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                done();
+            });
+        });
     }
 ```
 
 
 ### Values
 
-should render values correctly   <span style="color:green">✓</span>. `(1673ms)`
+should render values correctly   <span style="color:green">✓</span>. `(2366ms)`
 
 ```js
 function (done) {

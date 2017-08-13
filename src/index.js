@@ -57,7 +57,7 @@ function indexForKey(array, key) {
  * @param {string} key
  * @param {object} source
  */
-function bindAsArray(vm, key, source) {
+function bindAsCollection(vm, key, source) {
     var array = [];
     defineReactive(vm, key, array);
 
@@ -67,25 +67,39 @@ function bindAsArray(vm, key, source) {
         array.splice(index, 0, entry);
 
         if (source.onChildAdded) {
-            source.onChildAdded(array, entry, prevKey);
+            source.onChildAdded.call(vm, array, index, entry);
         }
     });
 
     source.array.on('child_removed', function(snapshot) {
         var index = indexForKey(array, snapshot.key);
-        array.splice(index, 1);
+        var entry = array.splice(index, 1);
+
+        if (source.onChildRemoved) {
+            source.onChildRemoved.call(vm, array, index, entry);
+        }
     });
 
     source.array.on('child_changed', function(snapshot) {
         var index = indexForKey(array, snapshot.key);
-        array.splice(index, 1, createValueRecord(snapshot));
+        var oldValue = array[index];
+        var newValue = createValueRecord(snapshot);
+        array.splice(index, 1, newValue);
+
+        if (source.onChildChanged) {
+            source.onChildChanged.call(vm, array, index, oldValue, newValue);
+        }
     });
 
     source.array.on('child_moved', function(snapshot, prevKey) {
-        var index = indexForKey(array, snapshot.key);
-        var record = array.splice(index, 1)[0];
+        var oldIndex = indexForKey(array, snapshot.key);
+        var entry = array.splice(oldIndex, 1)[0];
         var newIndex = prevKey ? indexForKey(array, prevKey) + 1 : 0;
-        array.splice(newIndex, 0, record);
+        array.splice(newIndex, 0, entry);
+
+        if (source.onChildMoved) {
+            source.onChildMoved.call(vm, array, oldIndex, newIndex, entry);
+        }
     });
 
     if (source.onValue) {
@@ -105,48 +119,55 @@ function bindAsArray(vm, key, source) {
  * @param {string} key
  * @param {object} source
  */
-function bindAsIndexedArray(vm, key, source) {
+function bindAsIndexedCollection(vm, key, source) {
     var indexArray = [];
     defineReactive(vm, key, indexArray);
 
     source.indexArray.on('child_added', function(indexSnapshot, prevKey) {
         var index = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
-        var indexRecord = createIndexRecord(indexSnapshot);
+        var entry = createIndexRecord(indexSnapshot);
         var valueSource;
-        indexArray.splice(index, 0, indexRecord);
+        indexArray.splice(index, 0, entry);
 
         valueSource = source.valueLookup.call(vm, indexSnapshot);
         valueSource.on('value', function(snapshot) {
-            indexRecord.value = snapshot.val();
-            indexRecord.$$valueKey = snapshot.key;
-            indexRecord.$$valueRef = snapshot.ref;
+            entry.value = snapshot.val();
+            entry.$$valueKey = snapshot.key;
+            entry.$$valueRef = snapshot.ref;
 
             if (source.onChildAdded) {
-                source.onChildAdded(indexArray, indexRecord, prevKey);
+                source.onChildAdded.call(vm, indexArray, index, entry);
             }
         });
 
         vm.$firebaseSources.push(valueSource);
     });
 
-    // TODO: We memleak here until the collection is destroyed because we don't clean up the listener
-    // even though we could here.
+    // TODO: Minor memleak. The listener is not cleaned up until the entire collection is destroyed.
     source.indexArray.on('child_removed', function(snapshot) {
         var index = indexForKey(indexArray, snapshot.key);
-        indexArray.splice(index, 1);
+        var entry = indexArray.splice(index, 1);
+
+        if (source.onChildRemoved) {
+            source.onChildRemoved.call(vm, indexArray, index, entry);
+        }
     });
 
-    // TODO: We don't process this event yet, should we?
+    // TODO: Add processing for childChanged for indexedCollection bindings.
     // source.indexArray.on('child_changed', snapshot => {
     //     var index = indexForKey(indexArray, snapshot.key);
     //     indexArray.splice(index, 1, createIndexValueRecord(snapshot));
     // });
 
     source.indexArray.on('child_moved', function(snapshot, prevKey) {
-        var index = indexForKey(indexArray, snapshot.key);
-        var record = indexArray.splice(index, 1)[0];
+        var oldIndex = indexForKey(indexArray, snapshot.key);
+        var entry = indexArray.splice(oldIndex, 1)[0];
         var newIndex = prevKey ? indexForKey(indexArray, prevKey) + 1 : 0;
-        indexArray.splice(newIndex, 0, record);
+        indexArray.splice(newIndex, 0, entry);
+
+        if (source.onChildMoved) {
+            source.onChildMoved.call(vm, indexArray, oldIndex, newIndex, entry);
+        }
     });
 
     vm.$firebaseSources.push(source.indexArray);
@@ -184,10 +205,10 @@ function bindAsValue(vm, key, source) {
 function bind(vm, fieldName, source) {
     if ('value' in source) {
         bindAsValue(vm, fieldName, source);
-    } else if ('array' in source) {
-        bindAsArray(vm, fieldName, source);
-    } else if ('indexArray' in source && 'valueLookup' in source) {
-        bindAsIndexedArray(vm, fieldName, source);
+    } else if ('collection' in source) {
+        bindAsCollection(vm, fieldName, source);
+    } else if ('indexedCollection' in source && 'valueLookup' in source) {
+        bindAsIndexedCollection(vm, fieldName, source);
     } else {
         throw new Error('FirebaseDataProvider: Missing or invalid source for "' + fieldName + '"');
     }

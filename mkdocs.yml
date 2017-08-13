@@ -10,6 +10,7 @@ site_dir: public
 pages:
   - Home: index.md
   - Usage: usage.md
+  - TODO: todo.md
   - Last Test Results: test.md
 
 markdown_extensions:

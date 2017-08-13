@@ -11,9 +11,10 @@
     "Xtest": "cross-env NODE_ENV=test nyc --reporter=none --reporter=html karma start test/karma.conf.js --single-run",
     "Xposttest": "cross-env NODE_ENV=test node_modules/.bin/nyc --reporter=none mocha -R mocha-markdown-extended-reporter > docs/test.md",
     "test": "cross-env BABEL_ENV=test karma start test/karma.conf.js",
+    "docs_todo": "leasot -r markdown src/**/*.js test/**/*.js > docs/todo.md || true",
     "docs_readme": "cp README.md docs/index.md",
     "docs_mkdocs": "mkdocs build",
-    "docs": "npm run docs_readme && npm run docs_mkdocs"
+    "docs": "npm run docs_todo && npm run docs_readme && npm run docs_mkdocs"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -72,6 +73,7 @@
     "karma-sourcemap-loader": "^0.3.7",
     "karma-spec-reporter": "0.0.31",
     "karma-webpack": "^2.0.4",
+    "leasot": "^4.10.0",
     "mocha": "^3.5.0",
     "mocha-markdown-extended-reporter": "0.0.0",
     "nyc": "^11.1.0",

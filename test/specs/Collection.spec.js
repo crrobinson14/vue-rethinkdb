@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import Value from '../components/Value.vue';
+import Collection from '../components/Collection.vue';
 import firebaseConfig from '../firebase.json';
 
 const VueFirebaseData = require('../../src');
@@ -14,11 +14,12 @@ chai.use(dirtyChai);
 firebase.initializeApp(firebaseConfig);
 Vue.use(VueFirebaseData);
 
-describe('Values', function() {
+describe('Collections', function() {
     it('should render values correctly', function(done) {
+        // FIXME: These tests need to be written
         this.timeout(10000);
 
-        const Constructor = Vue.extend(Value);
+        const Constructor = Vue.extend(Collection);
         const vm = new Constructor().$mount();
 
         expect(vm.$el.querySelector('span').textContent).to.equal('');
@@ -30,9 +31,4 @@ describe('Values', function() {
             });
         });
     });
-
-    // TODO: Move tests to a fake database we use just for dev/testing.
-    // TODO: Add a test for null value mapping
-    // TODO: Add a test for object mapping
-    // TODO: Add a test for missing required parameters
 });
