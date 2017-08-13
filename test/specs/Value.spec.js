@@ -7,7 +7,7 @@ const firebase = require('firebase');
 const chai = require('chai');
 const dirtyChai = require('dirty-chai');
 
-const expect = chai.expect;
+const expect = require('chai').expect;
 
 chai.use(dirtyChai);
 

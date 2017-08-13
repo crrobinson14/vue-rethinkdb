@@ -26,7 +26,7 @@ function (done) {
 
 ### Values
 
-should render values correctly   <span style="color:green">✓</span>. `(937ms)`
+should render values correctly   <span style="color:green">✓</span>. `(1673ms)`
 
 ```js
 function (done) {

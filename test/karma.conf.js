@@ -6,16 +6,20 @@ module.exports = function(config) {
         frameworks: ['mocha', 'dirty-chai'],
         reporters: ['spec', 'coverage', 'markdown'],
         files: [
+            // './index.js'
             'specs/*.js',
             '../src/*.js',
         ],
         preprocessors: {
-            'specs/*.js': ['sourcemap', 'webpack'],
-            '../src/*.js': ['coverage', 'sourcemap', 'webpack'],
+            // './index.js': ['webpack', 'sourcemap'],
+            // 'specs/*.js': ['webpack'],
+            // '../src/*.js': ['coverage'],
+            'specs/*.js': ['webpack', 'sourcemap'],
+            '../src/*.js': ['coverage', 'webpack', 'sourcemap'],
         },
         port: 9876,
         colors: true,
-        // logLevel: config.LOG_DEBUG,
+        logLevel: config.LOG_DEBUG,
         autoWatch: false,
         concurrency: Infinity,
         webpack: webpackConfig,
