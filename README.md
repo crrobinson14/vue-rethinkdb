@@ -1,19 +1,20 @@
-# Date Tools
+# VueJS Firebase Data Bridge
 
-[![docs](https://img.shields.io/badge/Project_Docs-mkdocs-blue.svg)](http://webng.gitlab-pages.paltalk.com/date-tools)
-[![build status](http://gitlab.paltalk.com/webng/date-tools/badges/master/build.svg)](http://gitlab.paltalk.com/webng/date-tools/pipelines)
-[![coverage report](http://gitlab.paltalk.com/webng/date-tools/badges/master/coverage.svg)](http://webng.gitlab-pages.paltalk.com/date-tools/coverage/index.html)
+[![docs](https://img.shields.io/badge/Project_Docs-mkdocs-blue.svg)](http://webng.gitlab-pages.paltalk.com/vue-firebase-data)
+[![build status](http://gitlab.paltalk.com/webng/vue-firebase-data/badges/master/build.svg)](http://gitlab.paltalk.com/webng/vue-firebase-data/pipelines)
+[![coverage report](http://gitlab.paltalk.com/webng/vue-firebase-data/badges/master/coverage.svg)](http://webng.gitlab-pages.paltalk.com/vue-firebase-data/coverage/index.html)
 
-This repo provides simpified date-management tools to eliminate the need
-to install MomentJS. Moment is great, but also huge, and doesn't Webpack
-very well. Please see the docs link above for more information.
+This repo provides a simpified Firebase plugin for managing data views
+in VueJS. It's similar to `vuefire` but streamlined, and also contains
+features similar to `firebaseui` in terms of managing "indexed"
+lookups.
 
 ## Getting Started
 
-Usage is easy. Simply `npm install -S @webng/date-tools`. Then use the
+Usage is easy. Simply `npm install -S @webng/vue-firebase-data`. Then use the
 module in your app:
 
-    const DateTools = require('@webng/date-tools');
+    const DateTools = require('@webng/vue-firebase-data');
 
     const now = Date.now();
     console.log(DateTools.timeAgo(now)); // ==> 'Just now'

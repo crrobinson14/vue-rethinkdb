@@ -124,8 +124,7 @@ function bindAsIndexedArray(vm, key, source) {
             if (source.onChildAdded) {
                 source.onChildAdded(indexArray, indexRecord, prevKey);
             }
-        })
-        ;
+        });
 
         vm.$firebaseSources.push(valueSource);
     });

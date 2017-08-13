@@ -9,7 +9,7 @@ site_dir: public
 
 pages:
   - Home: index.md
-  - Firebase Data: firebasedata.md
+  - Usage: usage.md
   - Last Test Results: test.md
 
 markdown_extensions:
