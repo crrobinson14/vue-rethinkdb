@@ -113,7 +113,7 @@ work directly on this data.)
 ---
 
 <a name="indexedCollection"></a>
-### varName: { indexedCollection: ref }
+### varName: { indexedCollection: ref, valueLookup: fn(snapshot) }
 
 | Param | Type | Description |
 | --- | --- | --- |

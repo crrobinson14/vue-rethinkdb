@@ -1,32 +1,19 @@
 import Vue from 'vue';
-import Collection from '../components/Collection.vue';
-import firebaseConfig from '../firebase.json';
-
-const VueFirebaseData = require('../../src');
-const firebase = require('firebase');
-const chai = require('chai');
-const dirtyChai = require('dirty-chai');
-
-const expect = require('chai').expect;
-
-chai.use(dirtyChai);
-
-firebase.initializeApp(firebaseConfig);
-Vue.use(VueFirebaseData);
+import Collection from './Collection.vue';
 
 describe('Collections', function() {
-    it('should render values correctly', function(done) {
-        // FIXME: These tests need to be written
+    it('should render collections correctly', function(done) {
         this.timeout(10000);
 
         const Constructor = Vue.extend(Collection);
         const vm = new Constructor().$mount();
 
-        expect(vm.$el.querySelector('span').textContent).to.equal('');
+        expect(vm.$el.textContent).to.equal('');
 
-        vm.$watch('record', function() {
+        vm.$watch('collection1', function() {
             Vue.nextTick(function() {
-                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                expect(vm.$el.textContent.indexOf('456 - Test 456')).to.be.above(1);
+                vm.$destroy();
                 done();
             });
         });

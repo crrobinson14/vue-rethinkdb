@@ -4,21 +4,21 @@
 
 ### Collections
 
-should render values correctly   <span style="color:green">✓</span>. `(3122ms)`
+should render collections correctly   <span style="color:green">✓</span>. `(548ms)`
 
 ```js
 function (done) {
-        // FIXME: These tests need to be written
         this.timeout(10000);
 
         var Constructor = _vue2.default.extend(_Collection2.default);
         var vm = new Constructor().$mount();
 
-        expect(vm.$el.querySelector('span').textContent).to.equal('');
+        expect(vm.$el.textContent).to.equal('');
 
-        vm.$watch('record', function () {
+        vm.$watch('collection1', function () {
             _vue2.default.nextTick(function () {
-                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                expect(vm.$el.textContent.indexOf('456 - Test 456')).to.be.above(1);
+                vm.$destroy();
                 done();
             });
         });
@@ -28,21 +28,34 @@ function (done) {
 
 ### Indexed Collections
 
-should render values correctly   <span style="color:green">✓</span>. `(671ms)`
+should render collections correctly   <span style="color:green">✓</span>. `(144ms)`
 
 ```js
 function (done) {
-        // FIXME: These tests need to be written
+        cov_phus6uzfa.f[1]++;
+        cov_phus6uzfa.s[2]++;
+
         this.timeout(10000);
 
-        var Constructor = _vue2.default.extend(_IndexedCollection2.default);
-        var vm = new Constructor().$mount();
+        var Constructor = (cov_phus6uzfa.s[3]++, _vue2.default.extend(_IndexedCollection2.default));
+        var vm = (cov_phus6uzfa.s[4]++, new Constructor().$mount());
 
-        expect(vm.$el.querySelector('span').textContent).to.equal('');
+        cov_phus6uzfa.s[5]++;
+        expect(vm.$el.textContent).to.equal('');
 
-        vm.$watch('record', function () {
+        cov_phus6uzfa.s[6]++;
+        vm.$watch('collection2', function () {
+            cov_phus6uzfa.f[2]++;
+            cov_phus6uzfa.s[7]++;
+
             _vue2.default.nextTick(function () {
-                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
+                cov_phus6uzfa.f[3]++;
+                cov_phus6uzfa.s[8]++;
+
+                expect(vm.$el.textContent).to.equal('123 - Test 123789 - Test 789');
+                cov_phus6uzfa.s[9]++;
+                vm.$destroy();
+                cov_phus6uzfa.s[10]++;
                 done();
             });
         });
@@ -52,7 +65,7 @@ function (done) {
 
 ### Values
 
-should render values correctly   <span style="color:green">✓</span>. `(2366ms)`
+should render values correctly   <span style="color:green">✓</span>. `(191ms)`
 
 ```js
 function (done) {
@@ -61,13 +74,25 @@ function (done) {
         var Constructor = _vue2.default.extend(_Value2.default);
         var vm = new Constructor().$mount();
 
-        expect(vm.$el.querySelector('span').textContent).to.equal('');
+        expect(vm.$el.querySelector('.number').textContent).to.equal('');
+        expect(vm.$el.querySelector('.string').textContent).to.equal('');
+        expect(vm.$el.querySelector('.bool').textContent).to.equal('');
+        expect(vm.$el.querySelector('.object').textContent).to.equal('');
+        expect(vm.$el.querySelector('.null').textContent).to.equal('');
 
-        vm.$watch('record', function () {
-            _vue2.default.nextTick(function () {
-                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
-                done();
-            });
+        vm.$watch('valueCallbacks', function () {
+            if (vm.valueCallbacks >= 4) {
+                _vue2.default.nextTick(function () {
+                    expect(vm.$el.querySelector('.number').textContent).to.equal('1');
+                    expect(vm.$el.querySelector('.string').textContent).to.equal('string');
+                    expect(vm.$el.querySelector('.bool').textContent).to.equal('true');
+                    expect(vm.$el.querySelector('.object').textContent).to.equal('value');
+                    expect(vm.$el.querySelector('.null').textContent).to.equal('');
+                    expect(vm.valueCallbacks).to.equal(4);
+                    vm.$destroy();
+                    done();
+                });
+            }
         });
     }
 ```

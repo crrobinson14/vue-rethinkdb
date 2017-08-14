@@ -1,18 +1,5 @@
 import Vue from 'vue';
-import Value from '../components/Value.vue';
-import firebaseConfig from '../firebase.json';
-
-const VueFirebaseData = require('../../src');
-const firebase = require('firebase');
-const chai = require('chai');
-const dirtyChai = require('dirty-chai');
-
-const expect = require('chai').expect;
-
-chai.use(dirtyChai);
-
-firebase.initializeApp(firebaseConfig);
-Vue.use(VueFirebaseData);
+import Value from './Value.vue';
 
 describe('Values', function() {
     it('should render values correctly', function(done) {
@@ -21,18 +8,27 @@ describe('Values', function() {
         const Constructor = Vue.extend(Value);
         const vm = new Constructor().$mount();
 
-        expect(vm.$el.querySelector('span').textContent).to.equal('');
+        expect(vm.$el.querySelector('.number').textContent).to.equal('');
+        expect(vm.$el.querySelector('.string').textContent).to.equal('');
+        expect(vm.$el.querySelector('.bool').textContent).to.equal('');
+        expect(vm.$el.querySelector('.object').textContent).to.equal('');
+        expect(vm.$el.querySelector('.null').textContent).to.equal('');
 
-        vm.$watch('record', function() {
-            Vue.nextTick(function() {
-                expect(vm.$el.querySelector('span').textContent).to.equal('Site Hosting');
-                done();
-            });
+        vm.$watch('valueCallbacks', function() {
+            if (vm.valueCallbacks >= 4) {
+                Vue.nextTick(function() {
+                    expect(vm.$el.querySelector('.number').textContent).to.equal('1');
+                    expect(vm.$el.querySelector('.string').textContent).to.equal('string');
+                    expect(vm.$el.querySelector('.bool').textContent).to.equal('true');
+                    expect(vm.$el.querySelector('.object').textContent).to.equal('value');
+                    expect(vm.$el.querySelector('.null').textContent).to.equal('');
+                    expect(vm.valueCallbacks).to.equal(4);
+                    vm.$destroy();
+                    done();
+                });
+            }
         });
     });
 
-    // TODO: Move tests to a fake database we use just for dev/testing.
-    // TODO: Add a test for null value mapping
-    // TODO: Add a test for object mapping
-    // TODO: Add a test for missing required parameters
+    // TODO: Add tests for missing required parameters
 });

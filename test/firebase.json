@@ -1,8 +1,8 @@
 {
-    "apiKey": "AIzaSyBuTxwVrK6bGT-NHeb4wfvzQwDkwVECPT0",
-    "authDomain": "apps-prod.firebaseapp.com",
-    "databaseURL": "https://apps-prod.firebaseio.com",
-    "projectId": "apps-prod",
-    "storageBucket": "apps-prod.appspot.com",
-    "messagingSenderId": "490875080798"
+    "apiKey": "AIzaSyAmNpAi1c9SfoyUY0ZKS_raNkMa65lCD5M",
+    "authDomain": "asnap-test-db.firebaseapp.com",
+    "databaseURL": "https://snap-test-db.firebaseio.com",
+    "projectId": "snap-test-db",
+    "storageBucket": "snap-test-db.appspot.com",
+    "messagingSenderId": "295074746411"
 }

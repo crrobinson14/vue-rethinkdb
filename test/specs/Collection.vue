@@ -1,7 +1,6 @@
 <template>
     <div>
-        <div v-for="service in services"></div>
-        <span>{{ record.value }}</span>
+        <div v-for="entry in collection1" :key="entry.$$key">{{ entry.$$key }} - {{ entry.name }}</div>
     </div>
 </template>
 
@@ -13,8 +12,8 @@
         data: () => ({}),
         firebaseData() {
             return {
-                record: {
-                    value: firebase.database().ref('/services/hosting/name')
+                collection1: {
+                    collection: firebase.database().ref('/apps/collection1').orderByKey()
                 },
             };
         }

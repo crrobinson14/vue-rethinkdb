@@ -1,26 +1,41 @@
-import Vue from 'vue';
-// var Vue = require('vue');
+// Polyfills for PhantomJS
+import bind from 'function-bind';
+import objectAssign from 'object-assign';
 
-// Vue.config.productionTip = false;
+import Vue from 'vue';
+
+import * as firebase from 'firebase';
 import firebaseConfig from './firebase.json';
 
-const VueFirebaseData = require('../src');
-const firebase = require('firebase');
-const chai = require('chai');
-const dirtyChai = require('dirty-chai');
-
-chai.use(dirtyChai);
+import VueFirebaseData from '../src';
 
 firebase.initializeApp(firebaseConfig);
 Vue.use(VueFirebaseData);
 
-// require all test files (files that ends with .spec.js)
-const testsContext = require.context('./specs', true, /\.spec.js$/);
-testsContext.keys().forEach(testsContext);
+/* eslint-disable no-extend-native */
+Function.prototype.bind = bind;
+Object.assign = objectAssign;
 
-// require all src files except main.js for coverage.
+// require all src files for coverage.
 // you can also change this to match only the subset of files that
 // you want coverage for.
-const srcContext = require.context('../src', true, /\.js$/);
-// const srcContext = require.context('../src', true, /^\.\/(?!index(\.js)?$)/);
+const srcContext = require.context('../src', true, /^\.\/(?!index(\.js)?$)/);
 srcContext.keys().forEach(srcContext);
+
+// Use a div to insert elements
+before(function() {
+    const el = document.createElement('DIV');
+    el.id = 'tests';
+    document.body.appendChild(el);
+});
+
+// Remove every test html scenario
+afterEach(function() {
+    const el = document.getElementById('tests');
+    for (let i = 0; i < el.children.length; ++i) {
+        el.removeChild(el.children[i]);
+    }
+});
+
+const specsContext = require.context('./specs', true, /\.js$/);
+specsContext.keys().forEach(specsContext);

@@ -1,33 +1,35 @@
-const webpackConfig = require('./webpack.config');
+const merge = require('webpack-merge');
+const baseConfig = require('../build/webpack.config.dev.js');
+
+const webpackConfig = merge(baseConfig, {
+    // use inline sourcemap for karma-sourcemap-loader
+    devtool: '#inline-source-map'
+});
+
+webpackConfig.plugins = [];
+
+const vueRule = webpackConfig.module.rules.find(rule => rule.loader === 'vue-loader');
+vueRule.options = vueRule.options || {};
+vueRule.options.loaders = vueRule.options.loaders || {};
+vueRule.options.loaders.js = 'babel-loader';
+
+// no need for app entry during tests
+delete webpackConfig.entry;
 
 module.exports = function(config) {
     config.set({
         browsers: ['PhantomJS'],
-        frameworks: ['mocha', 'dirty-chai'],
+        frameworks: ['mocha', 'chai-dom', 'sinon-chai'],
         reporters: ['spec', 'coverage', 'markdown'],
-        files: [
-            // './index.js'
-            'specs/*.js',
-            '../src/*.js',
-        ],
+        files: ['./index.js'],
         preprocessors: {
-            // './index.js': ['webpack', 'sourcemap'],
-            // 'specs/*.js': ['webpack'],
-            // '../src/*.js': ['coverage'],
-            'specs/*.js': ['webpack', 'sourcemap'],
-            '../src/*.js': ['coverage', 'webpack', 'sourcemap'],
+            './index.js': ['webpack', 'sourcemap']
         },
-        port: 9876,
-        colors: true,
-        // logLevel: config.LOG_DEBUG,
-        autoWatch: false,
-        concurrency: Infinity,
         webpack: webpackConfig,
         webpackMiddleware: {
             noInfo: true
         },
         coverageReporter: {
-            includeAllSources: true,
             dir: '../coverage',
             reporters: [
                 { type: 'html', subdir: '.' },
@@ -42,11 +44,11 @@ module.exports = function(config) {
         },
         plugins: [
             'karma-mocha',
-            'karma-chai',
-            'karma-dirty-chai',
             'karma-spec-reporter',
             'karma-coverage',
             'karma-webpack',
+            'karma-chai-dom',
+            'karma-sinon-chai',
             'karma-sourcemap-loader',
             'karma-phantomjs-launcher',
             'karma-phantomjs-shim',
@@ -55,6 +57,5 @@ module.exports = function(config) {
         markdownReporter: {
             output: 'docs/test.md'
         },
-        singleRun: true
     });
 };
