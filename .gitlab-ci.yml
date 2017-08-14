@@ -27,6 +27,8 @@ build:
   stage: build
   script:
     - npm install
+    - npm run build
+    - npm run build:dll
   tags:
     - node8
 
@@ -34,7 +36,6 @@ build:
 test:
   stage: test
   script:
-    - npm run lint
     - npm test
   coverage: /^Statements\s*:\s*([^%]+)/
   tags:
@@ -45,9 +46,9 @@ publish:
   stage: publish
   script:
     # npm prune --production fails with NPM 5.3.x in Docker containers
-    - rm -rf node_modules
-    - NODE_ENV=production npm install
     - npm run bump
+    # We build again to pick up the new version
+    - npm run build
     - npm publish
   tags:
     - node8
