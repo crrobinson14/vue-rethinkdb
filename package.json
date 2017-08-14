@@ -2,10 +2,10 @@
   "name": "@webng/vue-firebase-data",
   "version": "1.0.0",
   "description": "VueJS Firebase Database Support",
-  "main": "dist/vue-eventbus.common.js",
-  "module": "dist/vue-eventbus.esm.js",
-  "browser": "dist/vue-eventbus.js",
-  "unpkg": "dist/vue-eventbus.js",
+  "main": "dist/vue-firebase-data.common.js",
+  "module": "dist/vue-firebase-data.esm.js",
+  "browser": "dist/vue-firebase-data.js",
+  "unpkg": "dist/vue-firebase-data.js",
   "files": [
     "dist",
     "src"
@@ -97,7 +97,6 @@
     "object-assign": "^4.1.1",
     "postcss": "^6.0.0",
     "postcss-cssnext": "^2.10.0",
-    "pre-commit": "^1.2.0",
     "rimraf": "^2.6.0",
     "rollup": "^0.41.6",
     "rollup-plugin-buble": "^0.15.0",

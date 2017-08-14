@@ -9,6 +9,9 @@ pids/*
 coverage/
 public/
 
+dist/
+test/dist/
+
 # Common no-no files to commit
 *.pem
 *.log
