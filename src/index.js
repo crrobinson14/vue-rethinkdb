@@ -32,6 +32,7 @@ function createIndexRecord(snapshot) {
     record.$$index = snapshot.val();
     record.$$key = snapshot.key;
     record.$$ref = snapshot.ref;
+    record.$$ready = false;
     record.value = {};
     return record;
 }
@@ -127,6 +128,7 @@ function bindAsIndexedCollection(vm, key, source) {
         const valueSource = source.valueLookup.call(vm, indexSnapshot);
         valueSource.on('value', snapshot => {
             entry.value = snapshot.val();
+            entry.$$ready = true;
             entry.$$valueKey = snapshot.key;
             entry.$$valueRef = snapshot.ref;
 

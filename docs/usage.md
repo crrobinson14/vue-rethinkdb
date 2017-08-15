@@ -130,5 +130,6 @@ work directly on this data.)
 | --- | --- | --- |
 | value | <code>Vue</code> | The final value. |
 | $$index | <code>*</code> | The value of the index record. |
+| $$ready | <code>boolean</code> | True if the data value has been looked up. May be used to "gate" rendering data until it has arrived. |
 | $$key | <code>string</code> | The key of the mapped value. |
 | $$ref | <code>Reference</code> | The reference to the mapped value. |
