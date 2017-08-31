@@ -200,6 +200,16 @@ function bindAsValue(vm, key, source) {
  * @param {object} source
  */
 function bind(vm, fieldName, source) {
+    // TODO: If we're the "third query" in a chain, sort out some kind of way we can watch what we're bound to.
+    // For example, assume an indexedCollection query of services -> apiKeys for each service. If we then want to
+    // look up createdBy in the users collection, at the time we go to do that, apiKey is still being retrieved.
+    // But we've already stuck the record in the index - we had to, to get the sort ordering correct from Firebase
+    // (which uses array.splice and so on, with fixed position indices - you have to process them in the order the
+    // messages arrive for the ordering to work). That means our template has likely fired off any child components
+    // required for the rendering. If those child components require data (e.g. a userId) from the second (value)
+    // query, it will be undefined at the moment they're mounted - which is when firebaseData will ask them for their
+    // queries. We need some way for that third component to know what data it cares about and refresh its firebase
+    // queries somehow.
     if ('value' in source) {
         bindAsValue(vm, fieldName, source);
     } else if ('collection' in source) {
@@ -210,6 +220,55 @@ function bind(vm, fieldName, source) {
         throw new Error('FirebaseDataProvider: Missing or invalid source for "' + fieldName + '"');
     }
 }
+
+const apiUserRef = (api, userId) => firebase.database().ref(`api-requests/${api}/${userId}`);
+const responseRef = (api, userId, requestId) => firebase.database().ref(`api-responses/${api}/${userId}/${requestId}`);
+const standardFBHandler = promise => promise.then(() => {}).catch(e => Vue.$log.error(e));
+
+const VueFirebaseApi = {
+    /**
+     * Submit a request to an API endpoint. Returns a promise that will fulfill/reject with the server's response.
+     * This is NOT a live reference - only one response will ever be returned. It is up to the client application to
+     * implement any timeout functionality, if desired.
+     * TODO: Add support for timeouts in requests.
+     *
+     * @param {string} api - The API to call
+     * @param {string} userId - Our user ID
+     * @param {object} params - Parameters to include in the call
+     * @param {object} [timeout] - Optional. Defaults to 5000. Timeout in milliseconds for the request.
+     * @returns {Promise}
+     */
+    request(api, userId, params, timeout) {
+        const requestRef = apiUserRef(api, userId).push();
+        const requestId = requestRef.key;
+        const createdOn = Date.now();
+        const request = Object.assign({ requestId, createdOn, userId }, params);
+        const waitFor = +timeout || 5000;
+
+        standardFBHandler(requestRef.set(request));
+
+        const pendingResponse = responseRef(api, userId, requestId);
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                pendingResponse.off();
+                standardFBHandler(requestRef.ref.remove());
+                reject(new Error(`No response from server within timeout (${waitFor}).`));
+            }, waitFor);
+
+            pendingResponse.on('value', snapshot => {
+                // We (almost) always get at least one callback with snapshot=null.
+                if (snapshot && snapshot.val() !== null) {
+                    clearTimeout(timer);
+                    pendingResponse.off();
+                    resolve(snapshot);
+                }
+            }, () => {
+                clearTimeout(timer);
+                pendingResponse.off();
+            });
+        });
+    },
+};
 
 const VueFirebaseData = {
     install: function(_Vue) {
@@ -226,6 +285,9 @@ const VueFirebaseData = {
                     Object.keys(bindings)
                         .forEach(key => bind(this, key, bindings[key]));
                 }
+
+                // eslint-disable-next-line no-multi-assign
+                _Vue.$firebaseApi = _Vue.prototype.$firebaseApi = VueFirebaseApi;
             },
 
             beforeDestroy: function() {

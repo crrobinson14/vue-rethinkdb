@@ -4,7 +4,7 @@
 
 ### Collections
 
-should render collections correctly   <span style="color:green">✓</span>. `(689ms)`
+should render collections correctly   <span style="color:green">✓</span>. `(638ms)`
 
 ```js
 function (done) {
@@ -28,7 +28,7 @@ function (done) {
 
 ### Indexed Collections
 
-should render collections correctly   <span style="color:green">✓</span>. `(1552ms)`
+should render collections correctly   <span style="color:green">✓</span>. `(156ms)`
 
 ```js
 function (done) {
@@ -65,7 +65,7 @@ function (done) {
 
 ### Values
 
-should render values correctly   <span style="color:green">✓</span>. `(346ms)`
+should render values correctly   <span style="color:green">✓</span>. `(181ms)`
 
 ```js
 function (done) {
