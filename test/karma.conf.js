@@ -20,7 +20,7 @@ module.exports = function(config) {
     config.set({
         browsers: ['PhantomJS'],
         frameworks: ['mocha', 'chai-dom', 'sinon-chai'],
-        reporters: ['spec', 'coverage', 'markdown'],
+        reporters: ['spec', 'coverage'],
         files: ['./index.js'],
         preprocessors: {
             './index.js': ['webpack', 'sourcemap']
@@ -52,10 +52,6 @@ module.exports = function(config) {
             'karma-sourcemap-loader',
             'karma-phantomjs-launcher',
             'karma-phantomjs-shim',
-            '@webng/karma-markdown-reporter'
         ],
-        markdownReporter: {
-            output: 'docs/test.md'
-        },
     });
 };

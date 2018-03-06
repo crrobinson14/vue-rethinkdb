@@ -4,13 +4,9 @@ import objectAssign from 'object-assign';
 
 import Vue from 'vue';
 
-import * as firebase from 'firebase';
-import firebaseConfig from './firebase.json';
+import RethinkDB from '../src';
 
-import VueFirebaseData from '../src';
-
-firebase.initializeApp(firebaseConfig);
-Vue.use(VueFirebaseData);
+Vue.use(RethinkDB, { host: 'apexdb', db: 'apex' });
 
 /* eslint-disable no-extend-native */
 Function.prototype.bind = bind;

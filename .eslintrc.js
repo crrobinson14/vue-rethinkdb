@@ -11,9 +11,7 @@ module.exports = {
     plugins: [
         'html'
     ],
-    globals: {
-        firebase: true,
-    },
+    globals: {},
     // Uncomment this block to use the Webpack resolver to check if imports are valid.
     settings: {
         'import/resolver': {

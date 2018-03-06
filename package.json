@@ -1,5 +1,5 @@
 {
-  "name": "vue-rethinkdb-data",
+  "name": "vue-rethinkdb",
   "version": "1.0.0",
   "description": "VueJS Plugin for RethinkDB",
   "main": "dist/vue-rethinkdb-data.common.js",

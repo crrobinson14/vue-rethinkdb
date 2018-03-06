@@ -1,8 +1,0 @@
-{
-    "apiKey": "AIzaSyAmNpAi1c9SfoyUY0ZKS_raNkMa65lCD5M",
-    "authDomain": "asnap-test-db.firebaseapp.com",
-    "databaseURL": "https://snap-test-db.firebaseio.com",
-    "projectId": "snap-test-db",
-    "storageBucket": "snap-test-db.appspot.com",
-    "messagingSenderId": "295074746411"
-}
