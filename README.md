@@ -1,160 +1,163 @@
-# VueJS Firebase Data Bridge
+# VueRethinkDB: A VueJS RethinkDB Driver
 
-[![docs](https://img.shields.io/badge/Project_Docs-mkdocs-blue.svg)](http://webng.gitlab-pages.paltalk.com/vue-firebase-data)
-[![build status](http://gitlab.paltalk.com/webng/vue-firebase-data/badges/master/build.svg)](http://gitlab.paltalk.com/webng/vue-firebase-data/pipelines)
-[![coverage report](http://gitlab.paltalk.com/webng/vue-firebase-data/badges/master/coverage.svg)](http://webng.gitlab-pages.paltalk.com/vue-firebase-data/coverage/index.html)
-
-This repo provides a simpified Firebase plugin for managing data views
-in VueJS. It's similar to `vuefire` but streamlined, and also contains
-features similar to `firebaseui` in terms of managing "indexed"
-lookups.
+This repo provides a simpified RethinkDB plugin for managing data views in VueJS. It's similar to `vuefire` but with
+some simplified metaphors for tracking individual values or collections of values.
 
 ## Getting Started
 
-Usage is easy. Simply `npm install -S @webng/vue-firebase-data`, and
-add the plugin to VueJS, typically in your `main.js` file:
+Usage is easy. Simply `npm install -S vue-rethinkdb`, and add the plugin to VueJS, typically in your `main.js` file:
 
-    import VueFirebaseData from '@webng/vue-firebase-data';
-    Vue.use(VueFirebaseData);
+    import VueRethinkDB from 'vue-rethinkdb';
+    Vue.use(VueRethinkDB);
 
-Then use the module in your app as shown below. Refer to [Usage](usage)
-for full usage documentation.
+The examples below all assume a simple database with two tables:
 
-The examples below all assume the following (very common) data
-structure:
-
+`logentries`:
 ```json
-{
-    "orgs": {
-        "A": {
-            "name": "Organization A",
-            "otherData": "XYZ..."
-        },
-        "B": {
-            "name": "Organization B",
-            "otherData": "XYZ..."
-        },
-        "C": {
-            "name": "Organization C",
-            "otherData": "XYZ..."
-        },
-        "D": {
-            "name": "Organization D",
-            "otherData": "XYZ..."
-        },
+[
+    {
+        "id": "74B73033-75D0-432B-A106-E8A7DEEFD25B",
+        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
+        "message": "I went to the river today.",
+        "created": "2017-09-12T14:57:11Z"
     },
-    "users": {
-        "1": {
-            "name": "Chad",
-            "orgs": {
-                "A": true,
-                "D": true
-            }
-        }
-    }
-}
+    {
+        "id": "4D2E551A-C3B5-4BC4-A64D-10492E99265E",
+        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
+        "message": "I went to the ocean today.",
+        "created": "2017-09-14T16:39:41Z"
+    },
+    {
+        "id": "E67F4009-C447-4CEB-BCB2-2D316072CAB7",
+        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
+        "message": "I forgot to eat dinner today. The movie was so good!",
+        "created": "2017-09-17T23:10:45Z"
+    },
+]
 ```
 
-Given this data, a user profile page is as simple as:
+and
+
+`users`:
+```json
+[
+    {
+        "id": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
+        "first": "Chad",
+        "last": "Robinson",
+        "isExplorer": true
+    }
+]
+```
+
+# Individual Records
+
+Given this data, supplying data to a user profile page is as simple as:
 
 ```js
 <template>
     <div>
-        <span>{{ user.name }}</span>
+        <label>First: </label><span>{{ user.first }}</span>
+    </div>
+    <div>
+        <label>Last: </label><span>{{ user.last }}</span>
     </div>
 </template>
 
 <script>
-    import firebase from 'firebase';
-
     export default {
         name: 'user-profile',
         props: ['userId'],
         data: () => ({}),
-        firebaseData() {
+        rethinkDB(r) {
             return {
-                user: {
-                    value: firebase.database().ref(`/users/${userId}`)
-                },
+                user: r.db('mydb').table('users').get(this.userId),
             };
         }
     };
 </script>
 ```
 
-Note that there may be some special handling of the binding if the
-return type is not an object:
-
-1. `null` values (which Firebase cannot store, but returns when you
-  request records that do not exist) are mapped to empty objects `{}`.
-1. Discrete values (e.g. strings) are mapped as `FIELDNAME.value`,
-  where FIELDNAME is the name you provide. This is done to allow for
-  Reactive binding requirements in VueJS.
+In this case, the local component value `user` will be bound to the result of the query specified. There is no need to
+append `changes()` or `run()` - this is added automatically by the plugin.
 
 ## Collections
 
-Collections are just as simple. Note the use of the special `$$.key`
-field to access the unique identifier for each record in the collection.
+Collections are just as simple:
 
 ```js
 <template>
     <div>
-        <div v-for="org in orgs" key="org.$$key">{{ user.name }}</span>
+        <div v-for="entry in logentries" key="entry.id">{{ entry.created }} :: {{ entry.message }}</span>
     </div>
 </template>
 
 <script>
-    import firebase from 'firebase';
-
     export default {
-        name: 'orgs',
+        name: 'log-entries',
         data: () => ({}),
-        firebaseData() {
+        rethinkDB(r, opts) {
             return {
-                user: {
-                    collection: firebase.database().ref(`/orgs`)
-                },
+                logentries: r.db('mydb')
+                    .table('logentries')
+                    .getAll()
+                    .changes(opts.standardCollection)
+                    .merge(article => ({
+                        new_val: {
+                            body: db.db.table('articlebodies')
+                                .get(article('new_val')('id'))('body')
+                                .default('')
+                        }
+                    })),
             };
         }
     };
 </script>
 ```
 
-## Indexed Collections
+## Change Feed Options
 
-A common pattern with data sets similar to the one above is "display the
-organizations the user belongs to." In this case you want to display the
-organization name, not its ID. This plugin makes it easy to deal with
-"flattened" data sets by performing the secondary lookups to obtain the
-actual data values. All you need to do is provide a mapper function to
-map between index and data values:
+As illustrated above, this driver provides two standard sets of options that may be supplied in change feed requests:
+
+ - `standardValue`, for values, equates to `{ includeInitial: true, includeStates: true, includeTypes: true }`
+ - `standardCollection`, for collections, equates to
+   `{ includeInitial: true, includeStates: true, includeOffsets: true, includeTypes: true }`
+
+It is strongly recommended that you use one of these two options in your query. This plugin expects change feeds to
+include initial values, and will wait for `state` to become `ready` before sending the first change notification to
+VueJS. This helps prevent flicker when loading data sets for the first time. (The first update for a collection will
+include all initial rows at once.) It also expects offsets to be included for collection changes to help track `move`
+operations.
+
+In that case, why not just force one of these two options to be set? This is because in RethinkDB some data merge
+operations must be done AFTER the change feed is defined, e.g.:
 
 ```js
-<template>
-    <div>
-        <span>{{ record.value }}</span>
-    </div>
-</template>
-
-<script>
-    import firebase from 'firebase';
-    const db = firebase.database();
-
-    export default {
-        name: 'value',
-        props: ['userId'],
-        data: () => ({}),
-        firebaseData() {
+        rethinkData(r, opts) {
             return {
-                orgs: {
-                    indexedCollection: db.ref(`/users/${userId}`)
-                    valueLookup: snapshot => db.ref(`/orgs/${snapshot.key}`),
-                },
-            };
-        }
-    };
-</script>
+                logentries: r.db('mydb')
+                    .table('logentries')
+                    .getAll([this.userId], { index: 'userId' })
+                    .orderBy({ index: 'userId' })
+                    .limit(20)
+                    .changes(opts.standardCollection)
+                    .merge(logentry => ({
+                        new_val: {
+                            user: r.db('mydb')
+                                .table('users')
+                                .get(logentry('new_val')('userId'))
+                                .default({})
+                        }
+                    })),
 ```
 
-Please refer to [Usage](usage) for full documentation on the available
-options.
+The query above will include a nested `user` block for each log entry, saving a query when showing tabular data. This
+is inefficient compared to `eqJoin` operations for large data sets, but for small, filtered data sets this is much
+faster than doing a later lookup for each row.
+
+Another benefit to manually specifying change feed options is you can access additional parameters such as `squash`.
+See [ReQL command: changes](https://www.rethinkdb.com/api/javascript/changes/) for a list of available options here.
+Please note that failing to include states, types, or offsets could produce undefined behavior by this plugin.
+
+The only thing you do not have to add to a query is `.run()`. This plugin will do that for you (just like the
+RethinkDB Data Explorer).

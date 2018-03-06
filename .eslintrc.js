@@ -35,7 +35,7 @@ module.exports = {
         }],
         'arrow-parens': ['error', 'as-needed'],    // No reason to write ((a) => {..}) when (a => {..}) will do
         'no-trailing-spaces': 0,                   // Many IDEs insert these, they're invisible, and cause no harm
-        'no-console': 1,                           // We use console for debugging, should revisit this
+        'no-console': 0,                           // We use console for debugging, should revisit this
         'no-alert': 0,                             // These are actually pretty useful in modern browsers
         'comma-dangle': 0,                         // This seems good but ends up being painful in large nested objects
         'no-plusplus': 0,                          // i += 1 is REALLY annoying for devs used to ++. We'll be careful.

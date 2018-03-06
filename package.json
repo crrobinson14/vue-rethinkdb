@@ -1,11 +1,11 @@
 {
-  "name": "@webng/vue-firebase-data",
+  "name": "vue-rethinkdb-data",
   "version": "1.0.0",
-  "description": "VueJS Firebase Database Support",
-  "main": "dist/vue-firebase-data.common.js",
-  "module": "dist/vue-firebase-data.esm.js",
-  "browser": "dist/vue-firebase-data.js",
-  "unpkg": "dist/vue-firebase-data.js",
+  "description": "VueJS Plugin for RethinkDB",
+  "main": "dist/vue-rethinkdb-data.common.js",
+  "module": "dist/vue-rethinkdb-data.esm.js",
+  "browser": "dist/vue-rethinkdb-data.js",
+  "unpkg": "dist/vue-rethinkdb-data.js",
   "files": [
     "dist",
     "src"
@@ -21,19 +21,10 @@
     "pretest": "npm run lint",
     "test": "cross-env BABEL_ENV=test karma start test/karma.conf.js --single-run",
     "dev": "webpack-dashboard -- webpack-dev-server --config build/webpack.config.dev.js --open",
-    "dev:coverage": "cross-env BABEL_ENV=test karma start test/karma.conf.js",
-    "bump": "bump-npm.sh",
-    "notify": "notify-slack-npm.sh",
-    "docs_todo": "leasot -r markdown src/**/*.js test/specs/*.js > docs/todo.md || true",
-    "docs_readme": "cp README.md docs/index.md",
-    "docs_mkdocs": "mkdocs build",
-    "docs": "npm run docs_todo && npm run docs_readme && npm run docs_mkdocs"
+    "dev:coverage": "cross-env BABEL_ENV=test karma start test/karma.conf.js"
   },
-  "author": "",
-  "license": "UNLICENSED",
-  "publishConfig": {
-    "registry": "http://jfrog.theirweb.net:8081/artifactory/api/npm/webng-npm/"
-  },
+  "author": "Chad Robinson",
+  "license": "ISC",
   "eslintIgnore": [
     "dist"
   ],
@@ -49,8 +40,10 @@
     ],
     "report-dir": "./coverage"
   },
+  "dependencies": {
+    "rethinkdb": "^2.3.3"
+  },
   "devDependencies": {
-    "@webng/karma-markdown-reporter": "0.0.2",
     "add-asset-html-webpack-plugin": "^2.0.0",
     "babel-core": "^6.24.0",
     "babel-eslint": "^7.2.0",
@@ -62,7 +55,6 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-plugin-transform-vue-jsx": "^3.4.0",
     "babel-preset-env": "^1.4.0",
-    "bluebird": "^3.5.0",
     "buble": "^0.15.2",
     "chai": "^3.5.0",
     "chai-dom": "^1.4.0",
@@ -75,7 +67,6 @@
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-vue": "^2.0.0",
     "extract-text-webpack-plugin": "^2.1.0",
-    "firebase": "^4.2.0",
     "function-bind": "^1.1.0",
     "html-webpack-plugin": "^2.28.0",
     "karma": "^1.7.0",
@@ -132,6 +123,5 @@
       "events",
       "ansi-html"
     ]
-  },
-  "dependencies": {}
+  }
 }
