@@ -40,9 +40,7 @@
     ],
     "report-dir": "./coverage"
   },
-  "dependencies": {
-    "rethinkdb": "^2.3.3"
-  },
+  "dependencies": {},
   "devDependencies": {
     "add-asset-html-webpack-plugin": "^2.0.0",
     "babel-core": "^6.24.0",

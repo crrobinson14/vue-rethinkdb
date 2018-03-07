@@ -3,7 +3,32 @@
 This repo provides a simpified RethinkDB plugin for managing data views in VueJS. It's similar to `vuefire` but with
 some simplified metaphors for tracking individual values or collections of values.
 
-## Getting Started
+RethinkDB is a great database but since it's no longer commercially supported, some aspects of its development have lost
+their way. The biggest piece of this is Horizon, which was meant to be a client/server bridge between browsers and
+RethinkDB. RethinkDB was intended to be accessed server-to-server. Horizon provided the business logic required to
+access it from Web clients.
+
+Unfortunately, although RethinkDB is very usable, Horizon is basically dead and some other bridge mechanism is required
+to support Web clients. This project includes a simple SocketCluster-based WebSocket bridge layer in the `bridge/`
+folder.
+
+## Bridge Setup
+
+The Bridge is based on the highly scalable, robust [SocketCluster](https://socketcluster.io/#!/) framework. To get
+started, set up a server or cluster visible to the Internet that can also communicate with your RethinkDB cluster.
+Copy the contents of the `bridge/` folder there, and adjust the queries to suit your needs. Make sure you run `npm i`
+before trying to run `npm start`. You can use any mechanism you prefer (`forever`, `pm2`, `supervisor`, etc.) to
+keep the process running long-term.
+
+A nice feature of SocketCluster is that it automatically detects changes to worker logic files. This means you can
+adjust your queries on the fly without even restarting the daemon. The workers will be restarted automatically. The
+VueJS plugin keeps a list of open queries, and will automatically re-request them when it reconnects to the server.
+
+Adding business logic for queries and values is simple. Just adjust `lib/queries/index.js` and `lib/values/index.js`
+to suit your needs. If you need user-based access control, although SocketCluster provides its own authentication
+layer this can be confusing to use at first. An example is provided in `lib/of a simpler mechanism
+
+## Client Setup
 
 Usage is easy. Simply `npm install -S vue-rethinkdb`, and add the plugin to VueJS, typically in your `main.js` file:
 

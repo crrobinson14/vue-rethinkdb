@@ -37,15 +37,8 @@ module.exports = {
         'no-alert': 0,                             // These are actually pretty useful in modern browsers
         'comma-dangle': 0,                         // This seems good but ends up being painful in large nested objects
         'no-plusplus': 0,                          // i += 1 is REALLY annoying for devs used to ++. We'll be careful.
-
-        // This is an ES5 project
-        'prefer-template': 0,
-        'object-shorthand': 0,
-        'space-before-function-paren': 0,
-        'prefer-arrow-callback': 0,
-        'func-names': 0,
-        'no-param-reassign': 0,
-        'no-var': 0,
+        'global-require': 0,                       // This can be useful shorthand when done right...
+        'no-param-reassign': 0,                    // We want to store data on sockets as they arrive.
 
         // don't require extensions when importing
         'import/extensions': ['error', 'always', {
