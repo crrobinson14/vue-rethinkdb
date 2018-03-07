@@ -2,10 +2,10 @@
   "name": "vue-rethinkdb",
   "version": "1.0.1",
   "description": "VueJS Plugin for RethinkDB",
-  "main": "dist/vue-rethinkdb-data.common.js",
-  "module": "dist/vue-rethinkdb-data.esm.js",
-  "browser": "dist/vue-rethinkdb-data.js",
-  "unpkg": "dist/vue-rethinkdb-data.js",
+  "main": "dist/vue-rethinkdb.common.js",
+  "module": "dist/vue-rethinkdb.esm.js",
+  "browser": "dist/vue-rethinkdb.js",
+  "unpkg": "dist/vue-rethinkdb.js",
   "files": [
     "dist",
     "src"

@@ -1,5 +1,5 @@
 /*!
- * vue-rethinkdb v1.0.0
+ * vue-rethinkdb v1.0.1
  * (c) 2018 Chad Robinson
  * Released under the MIT License.
  */
