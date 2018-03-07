@@ -25,6 +25,9 @@
   },
   "author": "Chad Robinson",
   "license": "ISC",
+  "npmignore": [
+    "build"
+  ],
   "eslintIgnore": [
     "dist"
   ],
@@ -40,7 +43,9 @@
     ],
     "report-dir": "./coverage"
   },
-  "dependencies": {},
+  "dependencies": {
+    "reconnecting-websocket": "^3.2.2"
+  },
   "devDependencies": {
     "add-asset-html-webpack-plugin": "^2.0.0",
     "babel-core": "^6.24.0",

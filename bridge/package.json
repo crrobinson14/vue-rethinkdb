@@ -15,6 +15,7 @@
     "rethinkdb": "^2.3.3",
     "sc-framework-health-check": "^2.0.0",
     "sc-hot-reboot": "^1.0.0",
+    "scc-broker-client": "^2.1.2",
     "serve-static": "^1.13.2",
     "socketcluster": "^10.1.0",
     "uuid": "^3.2.1",

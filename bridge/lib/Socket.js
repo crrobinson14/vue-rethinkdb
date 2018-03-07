@@ -29,7 +29,7 @@ const requireAuth = (socket, params, res) => {
 
 const Socket = {
     init() {
-        DB.init();
+        return DB.connect();
     },
 
     manage(socket) {
