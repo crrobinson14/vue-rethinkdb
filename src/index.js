@@ -6,9 +6,10 @@ const RethinkDB = {
     nextQueryId: 1,
 
     queries: {},
+    requests: {},
 
     options: {
-        uri: 'ws://localhost:8000/socketcluster',
+        url: 'ws://localhost:8000/socketcluster',
         log: console,
     },
 
@@ -37,10 +38,7 @@ const RethinkDB = {
             }
         });
 
-        RethinkDB.rws = new ReconnectingWebSocket(RethinkDB.options.uri);
-
-        RethinkDB.rws.addEventListener('close', e => RethinkDB.options.log.log('RethinkDB: WebSocket closed', e));
-        RethinkDB.rws.addEventListener('error', e => RethinkDB.options.log.error('RethinkDB: WebSocket error', e));
+        RethinkDB.rws = new ReconnectingWebSocket(RethinkDB.options.url);
 
         RethinkDB.rws.addEventListener('open', () => {
             RethinkDB.options.log.debug('RethinkDB: Connection established, sending handshake...');
@@ -53,7 +51,6 @@ const RethinkDB = {
         RethinkDB.rws.addEventListener('message', message => {
             // "#1" messages are heartbeats. We just process them silently with no further propagation
             if (message.data === '#1') {
-                RethinkDB.options.log.debug('RethinkDB: Responding to ping/pong');
                 RethinkDB.rws.send('#2');
                 return;
             }
@@ -63,7 +60,6 @@ const RethinkDB = {
             // emitAck requests go directly to their callers
             const request = RethinkDB.requests[data.rid];
             if (request) {
-                RethinkDB.options.log.debug('RethinkDB: Got response to request ' + data.rid);
                 request.resolve(data.data);
                 delete RethinkDB.requests[data.rid];
                 return;
@@ -71,8 +67,7 @@ const RethinkDB = {
 
             // Query responses get processed and stored
             if (data.event === 'queryResponse') {
-                RethinkDB.options.log.log('RethinkDB: Value update', data);
-                RethinkDB.processQueryResponse(data);
+                RethinkDB.processQueryResponse(data.data);
                 return;
             }
 
@@ -94,6 +89,7 @@ const RethinkDB = {
     },
 
     registerField(Vue, vm, field, config) {
+        // TODO: Would it make more sense to just annotate the config with these elements, instead of copying it?
         const query = {
             queryId: RethinkDB.nextQueryId++,
             vm,
@@ -101,6 +97,12 @@ const RethinkDB = {
             query: config.query || config.collection,
             params: config.params || {},
             state: 'initializing',
+            onStateChanged: config.onStateChanged || null,
+            onValueChanged: config.onValueChanged || null,
+            onEntryAdded: config.onEntryAdded || null,
+            onEntryUpdated: config.onEntryUpdated || null,
+            onEntryMoved: config.onEntryMoved || null,
+            onEntryDeleted: config.onEntryDeleted || null,
         };
 
         RethinkDB.options.log.debug('RethinkDB: Registering field ' + field, { config, query });
@@ -165,17 +167,16 @@ const RethinkDB = {
     },
 
     processQueryResponse(response) {
-        RethinkDB.options.log.debug('RethinkDB: Processing query response');
         const query = RethinkDB.queries[response.queryId];
         if (!query) {
-            RethinkDB.options.log.error('RethinkDB: Ignoring query response for unknown queryId', response);
+            RethinkDB.options.log.error('RethinkDB: Ignoring query response for unknown queryId', response.change);
             return;
         }
 
         if (query.type === 'value') {
-            RethinkDB.processValueResponse(query, response);
+            RethinkDB.processValueResponse(query, response.change);
         } else {
-            RethinkDB.processCollectionResponse(query, response);
+            RethinkDB.processCollectionResponse(query, response.change);
         }
     },
 
@@ -184,21 +185,29 @@ const RethinkDB = {
         if (response.type === 'state') {
             query.state = response.state;
             RethinkDB.options.log.debug('RethinkDB: Query ' + query.queryId + ' new state: ' + query.state);
+            if (query.onStateChanged) {
+                query.onStateChanged.call(query.vm, query.state);
+            }
         } else if (response.new_val) {
             query.vm[query.field] = response.new_val;
             RethinkDB.options.log.debug('RethinkDB: Query ' + query.queryId + ' new value: ' + query.new_val);
+            if (query.onValueChanged) {
+                query.onValueChanged.call(query.vm, query.state, response.new_val);
+            }
         }
     },
 
     processCollectionResponse(query, response) {
-        RethinkDB.options.log.debug('RethinkDB: Processing collection response');
         // @credit https://github.com/rethinkdb/horizon/blob/next/client/src/ast.js#L185-L249
         switch (response.type) {
             case 'remove':
             case 'uninitial': {
                 // Remove old values from the array
                 if (response.old_offset != null) {
-                    query.vm[query.field].splice(response.old_offset, 1);
+                    const removed = query.vm[query.field].splice(response.old_offset, 1);
+                    if (query.onEntryDeleted) {
+                        query.onEntryDeleted.call(query.vm, query.state, removed[0], response.old_offset);
+                    }
                 } else {
                     const index = query.vm[query.field].findIndex(x => x.id === response.old_val.id);
                     if (index === -1) {
@@ -206,7 +215,10 @@ const RethinkDB = {
                         throw new Error('Unable to apply change: ' + JSON.stringify(response));
                     }
 
-                    query.vm[query.field].splice(index, 1);
+                    const removed = query.vm[query.field].splice(index, 1);
+                    if (query.onEntryDeleted) {
+                        query.onEntryDeleted.call(query.vm, query.state, removed[0], index);
+                    }
                 }
 
                 break;
@@ -218,9 +230,16 @@ const RethinkDB = {
                 if (response.new_offset != null) {
                     // If we have an offset, put it in the correct location
                     query.vm[query.field].splice(response.new_offset, 0, response.new_val);
+                    if (query.onEntryAdded) {
+                        query.onEntryAdded.call(query.vm, query.state, response.new_val, response.new_offset);
+                    }
                 } else {
                     // otherwise for unordered results, push it on the end
                     query.vm[query.field].push(response.new_val);
+                    if (query.onEntryAdded) {
+                        query.onEntryAdded.call(query.vm, query.state, response.new_val,
+                            query.vm[query.field].length - 1);
+                    }
                 }
 
                 break;
@@ -235,6 +254,9 @@ const RethinkDB = {
                 if (response.new_offset != null) {
                     // Splice in the new val if we have an offset
                     query.vm[query.field].splice(response.new_offset, 0, response.new_val);
+                    if (query.onEntryUpdated) {
+                        query.onEntryUpdated.call(query.vm, query.state, response.new_val, response.new_offset);
+                    }
                 } else {
                     // If we don't have an offset, find the old val and
                     // replace it with the new val
@@ -246,19 +268,24 @@ const RethinkDB = {
                         throw new Error('Unable to apply change: ' + JSON.stringify(response));
                     }
                     query.vm[query.field][index] = response.new_val;
+                    if (query.onEntryUpdated) {
+                        query.onEntryUpdated.call(query.vm, query.state, response.new_val, index);
+                    }
                 }
 
                 break;
             }
 
             case 'state':
+                query.state = response.state;
+                if (query.onStateChanged) {
+                    query.onStateChanged.call(query.vm, query.state);
+                }
                 break;
 
             default:
                 throw new Error('Unrecognized "type" field from server: ' + JSON.stringify(response));
         }
-
-        RethinkDB.options.log.debug('RethinkDB: Processed collection response', query.vm[query.field]);
     },
 
     /**
