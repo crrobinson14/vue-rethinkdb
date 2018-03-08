@@ -3,12 +3,8 @@ const uuidv4 = require('uuid').v4;
 const DB = require('./DB');
 const Log = require('./Log');
 
-// Edit and delete me if you want, but in the immortal words of Chris Rock: "You can drive a car with your FEET
-// if you want to, that don't make it a good f...ing idea!"
-const jwtSecret = process.env.JWT_SECRET || 'CHANGEME';
-if (jwtSecret === 'CHANGEME') {
-    throw new Error('Invalid or unspecified JWT_SECRET. Refusing to start an insecure installation!');
-}
+// Set this to enable authentication. Once enabled, query subscriptions will be rejected for unauthenticated users.
+const jwtSecret = process.env.JWT_SECRET;
 
 const requireQueryId = params => {
     if (!params.queryId) {
@@ -17,7 +13,11 @@ const requireQueryId = params => {
     }
 };
 
-const requireAuth = (socket, params, res) => {
+const checkAuth = (socket, params, res) => {
+    if (!jwtSecret) {
+        return true;
+    }
+
     if (!socket.session || !socket.session.valid) {
         Log.error('Invalid data request, not authenticated', params);
         res('Invalid data request, not authenticated');
@@ -33,7 +33,8 @@ const Socket = {
     },
 
     manage(socket) {
-        Log.info(`${socket.id} Connection from ${socket.remoteAddress}:${socket.remotePort}`);
+        socket.logIdent = [socket.remoteAddress, socket.remotePort].join(':');
+        Log.info(`${socket.id} Connection from ${socket.logIdent}`);
 
         // A few things we use later
         socket.feeds = {};
@@ -42,8 +43,14 @@ const Socket = {
             userId: 0,
         };
 
-        socket.on('auth', async (params, res) => {
-            Log.info(`${socket.id} Authenticating... ${socket.remoteAddress}:${socket.remotePort}`);
+        socket.on('auth', (params, res) => {
+            if (!jwtSecret) {
+                Log.error('Client attempted authentication but JWT_SECRET not set.');
+                res('Authentication failure.');
+                return;
+            }
+
+            Log.info(`${socket.id} Authenticating... ${socket.logIdent}`);
             try {
                 const decoded = jwt.verify(params.authToken, jwtSecret, { algorithm: 'HS256' });
                 Object.assign(socket.session, decoded, { valid: true });
@@ -56,8 +63,8 @@ const Socket = {
             }
         });
 
-        socket.on('changes', async (params, res) => {
-            if (!requireAuth(socket, params, res)) {
+        socket.on('subscribeQuery', (params, res) => {
+            if (!checkAuth(socket, params, res)) {
                 return;
             }
 
@@ -72,34 +79,15 @@ const Socket = {
                         }
 
                         socket.feeds[params.queryId] = cursor;
-                        cursor.each((e, change) => socket.emit('change', { params, change }));
+                        cursor.each((e, change) => socket.emit('queryResponse', { params, change }));
                     });
             } else {
-                Log.error('Invalid changes request, unknown query ' + params.query);
-                res('Invalid changes request, unknown query ' + params.query);
+                Log.error('Invalid request: Unknown query ' + params.query);
+                res('Invalid request: unknown query ' + params.query);
             }
         });
 
-        socket.on('values', async (params, res) => {
-            if (!requireAuth(socket, params, res)) {
-                return;
-            }
-
-            requireQueryId(params);
-
-            if (params.query in DB.values) {
-                DB.values[params.query](socket, params)
-                    .run(DB.conn, (err, cursor) => {
-                        socket.feeds[params.queryId] = cursor;
-                        cursor.each((e, value) => socket.emit('value', { params, value }));
-                    });
-            } else {
-                Log.error('Invalid values request, unknown query ' + params.query);
-                res('Invalid values request, unknown query ' + params.query);
-            }
-        });
-
-        socket.on('unsub', async (params, res) => {
+        socket.on('unsubscribeQuery', (params, res) => {
             const queryId = params.queryId || '';
             const feed = socket.feeds[queryId] || null;
 
@@ -114,22 +102,23 @@ const Socket = {
             }
         });
 
-        // TODO
-        // SyncManager.shared.client.emit(eventName: "stopChanges", data: ["queryId": queryId] as AnyObject)
+        // All other SocketCluster mechanisms will work here as well. For instance, to generically subscribe to all
+        // messages from clients, implement the following listener:
+        // socket.on('message', async params => {
+        //     if (params !== '#2') {
+        //         Log.info('Generic message from client', params);
+        //     }
+        //
+        //     // Do something here
+        // });
 
-        socket.on('message', async params => {
-            if (params !== '#2') {
-                Log.info('message', params);
-            }
-        });
-
-        socket.on('error', async e => {
-            Log.info(`${socket.id} Connection error for ${socket.remoteAddress}:${socket.remotePort}: ${e.message}`);
+        socket.on('error', e => {
+            Log.info(`${socket.id} Connection error for ${socket.logIdent}: ${e.message}`);
         });
 
         socket.on('disconnect', () => {
             const feeds = Object.values(socket.feeds);
-            Log.info(`${socket.id} Disconnected from ${socket.remoteAddress}:${socket.remotePort}, closing ${feeds.length} feed(s)`);
+            Log.info(`${socket.id} Disconnected from ${socket.logIdent}, closing ${feeds.length} feed(s)`);
             feeds.map(feed => feed.close());
         });
     }
