@@ -39,6 +39,7 @@ module.exports = {
         'no-plusplus': 0,                          // i += 1 is REALLY annoying for devs used to ++. We'll be careful.
         'global-require': 0,                       // This can be useful shorthand when done right...
         'no-param-reassign': 0,                    // We want to store data on sockets as they arrive.
+        'prefer-template': 0,                      // Stay a little closer to some related code bases for now
 
         // don't require extensions when importing
         'import/extensions': ['error', 'always', {

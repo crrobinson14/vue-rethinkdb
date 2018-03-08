@@ -1,91 +1,82 @@
-# VueRethinkDB: A VueJS RethinkDB Driver
+# VueRethinkDB: RethinkDB driver for VueJS
 
-This repo provides a simpified RethinkDB plugin for managing data views in VueJS. It's similar to `vuefire` but with
-some simplified metaphors for tracking individual values or collections of values.
+This project provides a basic plugin for communicating with RethinkDB from a VueJS app.
 
-RethinkDB is a great database but since it's no longer commercially supported, some aspects of its development have lost
-their way. The biggest piece of this is Horizon, which was meant to be a client/server bridge between browsers and
-RethinkDB. RethinkDB was intended to be accessed server-to-server. Horizon provided the business logic required to
-access it from Web clients.
+RethinkDB is a great database, but since it's no longer commercially supported, some aspects of its development have
+lost momentum. The biggest piece of this was Horizon, a client/server bridge between browsers and RethinkDB. RethinkDB
+has a Javascript driver, but it's only intended to be used in NodeJS, server-side. Horizon would have provided the
+business logic to support Web clients.
 
-Unfortunately, although RethinkDB is very usable, Horizon is basically dead and some other bridge mechanism is required
-to support Web clients. This project includes a simple SocketCluster-based WebSocket bridge layer in the `bridge/`
-folder.
+Unfortunately, although RethinkDB is very usable, Horizon is all but dead. Some other bridge mechanism is required to
+support Web clients.
 
-## Bridge Setup
+This project provides two components: a VueJS plugin and a server-side "bridge". The protocol between the two is very
+simple, so the server side component could be easily replaced. (Used correctly, it could even talk to any database that
+supports subscription-based monitoring of data - not just RethinkDB).
 
-The Bridge is based on the highly scalable, robust [SocketCluster](https://socketcluster.io/#!/) framework. To get
-started, set up a server or cluster visible to the Internet that can also communicate with your RethinkDB cluster.
-Copy the contents of the `bridge/` folder there, and adjust the queries to suit your needs. Make sure you run `npm i`
-before trying to run `npm start`. You can use any mechanism you prefer (`forever`, `pm2`, `supervisor`, etc.) to
-keep the process running long-term.
+## Server-side Bridge
 
-A nice feature of SocketCluster is that it automatically detects changes to worker logic files. This means you can
-adjust your queries on the fly without even restarting the daemon. The workers will be restarted automatically. The
-VueJS plugin keeps a list of open queries, and will automatically re-request them when it reconnects to the server.
+See the [Bridge README](bridge/README.md) for more details on this component. Set this component up first: queries and
+business logic are defined here.
 
-Adding business logic for queries and values is simple. Just adjust `lib/queries/index.js` and `lib/values/index.js`
-to suit your needs. If you need user-based access control, although SocketCluster provides its own authentication
-layer this can be confusing to use at first. An example is provided in `lib/of a simpler mechanism
+## Client Installation
 
-## Client Setup
+Installation is easy. Just `npm install -S vue-rethinkdb`, then and add the plugin to VueJS:
 
-Usage is easy. Simply `npm install -S vue-rethinkdb`, and add the plugin to VueJS, typically in your `main.js` file:
+    import RethinkDB from 'vue-rethinkdb';
+    Vue.use(RethinkDB, { options });
 
-    import VueRethinkDB from 'vue-rethinkdb';
-    Vue.use(VueRethinkDB);
+Two options are currently supported, with the defaults shown below:
 
-The examples below all assume a simple database with two tables:
-
-`logentries`:
-```json
-[
     {
-        "id": "74B73033-75D0-432B-A106-E8A7DEEFD25B",
-        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
-        "message": "I went to the river today.",
-        "created": "2017-09-12T14:57:11Z"
-    },
-    {
-        "id": "4D2E551A-C3B5-4BC4-A64D-10492E99265E",
-        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
-        "message": "I went to the ocean today.",
-        "created": "2017-09-14T16:39:41Z"
-    },
-    {
-        "id": "E67F4009-C447-4CEB-BCB2-2D316072CAB7",
-        "userId": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
-        "message": "I forgot to eat dinner today. The movie was so good!",
-        "created": "2017-09-17T23:10:45Z"
-    },
-]
-```
-
-and
-
-`users`:
-```json
-[
-    {
-        "id": "C6CB7A3B-59B6-4A24-9783-13B03E3EF6B1",
-        "first": "Chad",
-        "last": "Robinson",
-        "isExplorer": true
+        uri: 'ws://localhost:8000/socketcluster',
+        log: console,
     }
-]
-```
 
-# Individual Records
+- **uri** is obviously the endpoint to connect to. Note that because a full URI is specified here, you can choose
+  between wss:// and ws:// connections easily.
+- **log** controls where logs are sent. This is provided to allow you to override the default logging in the plugin (to
+  console) such as if you use Winston, or simply wish to disable certain log levels. For example, to disable debug and
+  info logging but show errors, you could set this to:
 
-Given this data, supplying data to a user profile page is as simple as:
+        log: {
+            error: console.error,
+            debug: () => {},
+            log: () => {},
+        }
+
+## Authentication
+
+Authentication is optional but recommended. By default the Bridge provides a simple JWT validation mechanism, but this
+could be changed to any desired implementation (e.g. session cookie) just by altering the logic there.
+
+If you elect to use the JWT token mechanism, set the token as follows, ideally as early as possible when your
+application starts:
+
+    RethinkDB.authenticate(authToken);
+
+Note that storing JWTs is a security concern. Ideally a Web application should not store these in localStorage or
+similar. If you prefer a more secure solution, use HTTP "Secure Cookies" to maintain a session with your other
+back-end application servers, and arrange an endpoint in your API layer such as "/get-data-token" that confirms the
+user's identity via other means. Make this token short-lived (e.g. 60 seconds), so if it is stolen it will not be
+useful:
+
+    axios
+        .get('/get-data-token)
+        .then(response => RethinkDB.authenticate(response.data.authToken))
+        .catch(e => console.error('Unable to authenticate!', e);
+
+## Usage in a Component
+
+Two sample queries are provided in the Bridge called `myUser` and `myFollowers`. Suppose we wanted to build a simple
+public profile page for a user and his/her followers. We could just do the following:
 
 ```js
 <template>
-    <div>
-        <label>First: </label><span>{{ user.first }}</span>
-    </div>
-    <div>
-        <label>Last: </label><span>{{ user.last }}</span>
+    <h1>{{ user.firstName }} {{ user.lastName }}</h1>
+    <h2>Followers:</h2>
+    <div class="followers">
+        <div v-for="follower in followers" key="follower.id">{{ follower.firstName }} {{ follower.lastName }}</span>
     </div>
 </template>
 
@@ -94,95 +85,34 @@ Given this data, supplying data to a user profile page is as simple as:
         name: 'user-profile',
         props: ['userId'],
         data: () => ({}),
-        rethinkDB(r) {
+        rethinkDB() {
             return {
-                user: r.db('mydb').table('users').get(this.userId),
+                user: { value: 'getUser', params: { userId: this.userId } },
+                followers: { collection: 'userFollowers', params: { userId: this.userId } },
             };
         }
     };
 </script>
 ```
 
-In this case, the local component value `user` will be bound to the result of the query specified. There is no need to
-append `changes()` or `run()` - this is added automatically by the plugin.
+Note that the fields defined in this way are reactive, so you can observe them with other VueJS mechanisms as well.
 
-## Collections
+## Other Usage
 
-Collections are just as simple:
+Because the Bridge is based on SocketCluster, many other forms of communication are possible. Two (`emit` and `emitAck`)
+are used by this plugin so they are exposed for you to use:
 
-```js
-<template>
-    <div>
-        <div v-for="entry in logentries" key="entry.id">{{ entry.created }} :: {{ entry.message }}</span>
-    </div>
-</template>
+    import RethinkDB from 'vue-rethinkdb';
 
-<script>
-    export default {
-        name: 'log-entries',
-        data: () => ({}),
-        rethinkDB(r, opts) {
-            return {
-                logentries: r.db('mydb')
-                    .table('logentries')
-                    .getAll()
-                    .changes(opts.standardCollection)
-                    .merge(article => ({
-                        new_val: {
-                            body: db.db.table('articlebodies')
-                                .get(article('new_val')('id'))('body')
-                                .default('')
-                        }
-                    })),
-            };
-        }
-    };
-</script>
-```
+    // Send a message, no response required
+    RethinkDB.emit('tellTheServerThis', { itHappened: 'finally!' });
 
-## Change Feed Options
+    // Send a message, resolve a promise when the server replies
+    RethinkDB.emitAck('askTheServerSomething', { id: 1234 })
+        .then(response => console.log('The server replied!', response))
+        .catch(e => console.error('The request timed out', e));
 
-As illustrated above, this driver provides two standard sets of options that may be supplied in change feed requests:
-
- - `standardValue`, for values, equates to `{ includeInitial: true, includeStates: true, includeTypes: true }`
- - `standardCollection`, for collections, equates to
-   `{ includeInitial: true, includeStates: true, includeOffsets: true, includeTypes: true }`
-
-It is strongly recommended that you use one of these two options in your query. This plugin expects change feeds to
-include initial values, and will wait for `state` to become `ready` before sending the first change notification to
-VueJS. This helps prevent flicker when loading data sets for the first time. (The first update for a collection will
-include all initial rows at once.) It also expects offsets to be included for collection changes to help track `move`
-operations.
-
-In that case, why not just force one of these two options to be set? This is because in RethinkDB some data merge
-operations must be done AFTER the change feed is defined, e.g.:
-
-```js
-        rethinkData(r, opts) {
-            return {
-                logentries: r.db('mydb')
-                    .table('logentries')
-                    .getAll([this.userId], { index: 'userId' })
-                    .orderBy({ index: 'userId' })
-                    .limit(20)
-                    .changes(opts.standardCollection)
-                    .merge(logentry => ({
-                        new_val: {
-                            user: r.db('mydb')
-                                .table('users')
-                                .get(logentry('new_val')('userId'))
-                                .default({})
-                        }
-                    })),
-```
-
-The query above will include a nested `user` block for each log entry, saving a query when showing tabular data. This
-is inefficient compared to `eqJoin` operations for large data sets, but for small, filtered data sets this is much
-faster than doing a later lookup for each row.
-
-Another benefit to manually specifying change feed options is you can access additional parameters such as `squash`.
-See [ReQL command: changes](https://www.rethinkdb.com/api/javascript/changes/) for a list of available options here.
-Please note that failing to include states, types, or offsets could produce undefined behavior by this plugin.
-
-The only thing you do not have to add to a query is `.run()`. This plugin will do that for you (just like the
-RethinkDB Data Explorer).
+Although they are not shown here, you could easily take advantage of additional SocketCluster features as well. One
+useful option is SocketCluster's cross-cluster communication and pub/sub mechanics. This would make it very easy to
+build a real-time chat service with presence tracking, combining SocketCluster's communication tools with RethinkDB
+tracking data like user "friend" lists, room membership, profiles, and other data!

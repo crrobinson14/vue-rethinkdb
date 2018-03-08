@@ -2,8 +2,7 @@ const r = require('rethinkdb');
 const Log = require('./Log');
 
 const DB = {
-    queries: require('./queries'),
-    values: require('./values'),
+    queries: require('./Queries'),
 
     conn: null,
 

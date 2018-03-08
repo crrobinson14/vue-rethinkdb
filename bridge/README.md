@@ -2,6 +2,20 @@
 
 > SocketCluster based bridge layer for browser and mobile clients to RethinkDB.
 
+The Bridge is based on the highly scalable, robust [SocketCluster](https://socketcluster.io/#!/) framework. To get
+started, set up a server or cluster visible to the Internet that can also communicate with your RethinkDB cluster.
+Copy the contents of the `bridge/` folder there, and adjust the queries to suit your needs. Make sure you run `npm i`
+before trying to run `npm start`. You can use any mechanism you prefer (`forever`, `pm2`, `supervisor`, etc.) to
+keep the process running long-term.
+
+A nice feature of SocketCluster is that it automatically detects changes to worker logic files. This means you can
+adjust your queries on the fly without even restarting the daemon. The workers will be restarted automatically. The
+VueJS plugin keeps a list of open queries, and will automatically re-request them when it reconnects to the server.
+
+Adding business logic for queries and values is simple. Just adjust `lib/queries/index.js` and `lib/values/index.js`
+to suit your needs. If you need user-based access control, although SocketCluster provides its own authentication
+layer this can be confusing to use at first. An example is provided in `lib/of a simpler mechanism
+
 This daemon is a simple bridge layer between RethinkDB and WebSocket clients, typically Web or mobile apps, although it
 could be useful for any client environment.
 

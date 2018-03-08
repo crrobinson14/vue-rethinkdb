@@ -67,7 +67,7 @@ const Socket = {
                 DB.queries[params.query](socket, params)
                     .run(DB.conn, (err, cursor) => {
                         if (err) {
-                            console.error(err);
+                            Log.error(err);
                             return;
                         }
 
