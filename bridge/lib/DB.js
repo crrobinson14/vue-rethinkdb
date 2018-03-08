@@ -7,14 +7,10 @@ const DB = {
     conn: null,
 
     async connect() {
-        if (!process.env.RETHINKDB_HOST) {
-            throw new Error('Invalid or unspecified RETHINKDB_HOST.');
-        }
-
         try {
             Log.info('   >> Connecting to RethinkDB...');
 
-            const host = process.env.RETHINKDB_HOST;
+            const host = process.env.RETHINKDB_HOST || 'localhost';
             const port = process.env.RETHINKDB_PORT || 28015;
             const db = process.env.RETHINKDB_DB || undefined;
             const user = process.env.RETHINKDB_USER || undefined;

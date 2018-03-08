@@ -1,30 +1,18 @@
 const jwt = require('jsonwebtoken');
-const uuidv4 = require('uuid').v4;
 const DB = require('./DB');
 const Log = require('./Log');
 
 // Set this to enable authentication. Once enabled, query subscriptions will be rejected for unauthenticated users.
 const jwtSecret = process.env.JWT_SECRET;
 
-const requireQueryId = params => {
-    if (!params.queryId) {
-        params.queryId = uuidv4();
-        Log.error(`Data request with no queryId, using ${params.queryId}`);
-    }
+const reportError = (res, message, extraData) => {
+    Log.error(message, extraData);
+    res(message);
 };
 
-const checkAuth = (socket, params, res) => {
-    if (!jwtSecret) {
-        return true;
-    }
-
-    if (!socket.session || !socket.session.valid) {
-        Log.error('Invalid data request, not authenticated', params);
-        res('Invalid data request, not authenticated');
-        return false;
-    }
-
-    return true;
+const reportEvent = (res, message, extraData) => {
+    Log.info(message, extraData);
+    res(null, message);
 };
 
 const Socket = {
@@ -45,8 +33,7 @@ const Socket = {
 
         socket.on('auth', (params, res) => {
             if (!jwtSecret) {
-                Log.error('Client attempted authentication but JWT_SECRET not set.');
-                res('Authentication failure.');
+                reportError(res, 'Authentication failure', 'JWT_SECRET not set');
                 return;
             }
 
@@ -58,47 +45,54 @@ const Socket = {
 
                 res(null, socket.session);
             } catch (e) {
-                Log.error('Authentication error', e);
-                res(e.message);
+                reportError(res, e.message, e);
             }
         });
 
-        socket.on('subscribeQuery', (params, res) => {
-            if (!checkAuth(socket, params, res)) {
+        socket.on('subscribeQuery', (request, res) => {
+            // If authentication is required, block anonymous requests
+            if (jwtSecret && (!socket.session || !socket.session.valid)) {
+                reportError(res, 'Invalid query: authentication required', request);
                 return;
             }
 
-            requireQueryId(params);
+            // We need a queryId, and it needs to be unique
+            const { queryId, query, params } = request;
+            if (!queryId || socket.feeds[queryId]) {
+                reportError(res, `Invalid query: missing or duplicate queryId: ${queryId}`, request);
+                return;
+            }
 
-            if (params.query in DB.queries) {
-                DB.queries[params.query](socket, params)
-                    .run(DB.conn, (err, cursor) => {
-                        if (err) {
-                            Log.error(err);
-                            return;
-                        }
+            // And the query has to exist...
+            if (!(query in DB.queries)) {
+                reportError(res, `Unknown query: ${query}`, request);
+                return;
+            }
 
-                        socket.feeds[params.queryId] = cursor;
-                        cursor.each((e, change) => socket.emit('queryResponse', { params, change }));
-                    });
-            } else {
-                Log.error('Invalid request: Unknown query ' + params.query);
-                res('Invalid request: unknown query ' + params.query);
+            // We need to try/catch AND promise.catch() because some REQL errors can occur outside the Promise.
+            try {
+                DB.queries[query](socket, params || {})
+                    .run(DB.conn)
+                    .then(cursor => {
+                        socket.feeds[queryId] = cursor;
+                        cursor.each((e, change) => socket.emit('queryResponse', { queryId, change }));
+                    })
+                    .catch(e => reportError(res, `Invalid query: ${e.message}`, request));
+            } catch (e) {
+                reportError(res, `Invalid query: ${e.message}`, request);
             }
         });
 
         socket.on('unsubscribeQuery', (params, res) => {
-            const queryId = params.queryId || '';
+            const { queryId } = params;
             const feed = socket.feeds[queryId] || null;
 
             if (feed) {
-                Log.info(`Unsubscribed from query ID ${params.queryId}`);
-                res(null, `Unsubscribed from query ID ${params.queryId}`);
+                reportEvent(res, `Unsubscribed from query ID ${queryId}`, params);
                 feed.close();
                 delete socket.feeds[queryId];
             } else {
-                Log.error(`Cannot unsubscribe: unknown query ID ${params.queryId}`);
-                res(`Cannot unsubscribe: unknown query ID ${params.queryId}`);
+                reportError(res, `Unknown query ID ${queryId}`, params);
             }
         });
 

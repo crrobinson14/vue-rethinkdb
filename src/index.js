@@ -274,7 +274,7 @@ const RethinkDB = {
             RethinkDB.authToken = authToken;
         }
 
-        if (RethinkDB.authToken && RethinkDB.rws.readyState === WebSocket.OPEN) {
+        if (RethinkDB.authToken && RethinkDB.rws && RethinkDB.rws.readyState === WebSocket.OPEN) {
             RethinkDB.options.log.debug('RethinkDB: Authenticating...');
             RethinkDB.emitAck('auth', { authToken: RethinkDB.authToken })
                 .then(r => RethinkDB.options.log.log('Authenticated', r))

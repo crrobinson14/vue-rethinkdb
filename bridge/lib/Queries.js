@@ -9,7 +9,7 @@ const Queries = {};
 
 // A simple value query for a public user record. We do not emit sensitive fields (email, etc.) here. Note that the
 // pluck operation has to come after the changefeed request.
-Queries.getUser = (db, socket, params) =>
+Queries.getUser = (socket, params) =>
     r.table('users')
         .get(params.userId)
         .changes(standardValue)
@@ -17,7 +17,7 @@ Queries.getUser = (db, socket, params) =>
 
 // A simple value query for a private user record. This does not accept the userId as a parameter. It takes it from
 // authentication data so users can only request their own records.
-Queries.myUser = (db, socket) =>
+Queries.myUser = socket =>
     r.table('users')
         .get(socket.session.userId)
         .changes(standardValue);
@@ -35,7 +35,7 @@ Queries.trendingProducts = () =>
 // Just another query, this time illustrating the use of between/orderby/limit to produce a cooked data set. This
 // query pretends we have a table called `orders` with a compound index called `myOrders` with [userId, createdOn]
 // as its fields. Compound indices usually require a minval/maxval range operation to query them.
-Queries.recentOrders = (db, socket) =>
+Queries.recentOrders = socket =>
     r.table('orders')
         .between(
             [socket.session.userId, r.minval],
@@ -46,8 +46,10 @@ Queries.recentOrders = (db, socket) =>
         .limit(20)
         .changes(standardQuery);
 
-// This is similar to recentOrders but verifies that we actually own the order first!
-Queries.orderItems = (db, socket, params) => r.table('orders')
+// This is similar to recentOrders but verifies that we actually own the order first! Notice that the socket request
+// handling expects us to be Promise-based, where the promise resolves to a changefeed. We don't have to return that
+// instantly. We can do other work first, as shown here.
+Queries.orderItems = (socket, params) => r.table('orders')
     .get(params.orderId)
     .run(DB.conn)
     .then(order => {
@@ -69,7 +71,7 @@ Queries.orderItems = (db, socket, params) => r.table('orders')
     });
 
 // Sophisticated query looking up a bunch of nested details for each matched entry.
-Queries.myOrderReport = (db, socket) =>
+Queries.myOrderReport = socket =>
     r.table('orders')
         .between(
             [socket.session.userId, r.minval],
@@ -92,7 +94,7 @@ Queries.myOrderReport = (db, socket) =>
 // We can do filter() operations but we become non-atomic, so we aren't allowed to ask for offsets anymore. The
 // standard client library can handle this, but it's less efficient and predictable so only use it if necessary.
 // NOTE: We can clean up some of this logic when https://github.com/rethinkdb/rethinkdb/issues/3997 is done.
-Queries.userFollowers = (db, socket, params) =>
+Queries.userFollowers = (socket, params) =>
     r.table('follows')
         .between(
             [params.userId, r.minval],
