@@ -71,7 +71,7 @@ useful:
 
 ```js
 axios
-    .get('/get-data-token)
+    .get('/get-data-token')
     .then(response => RethinkDB.authenticate(response.data.authToken))
     .catch(e => console.error('Unable to authenticate!', e);
 ```
