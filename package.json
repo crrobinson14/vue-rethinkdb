@@ -25,6 +25,10 @@
   },
   "author": "Chad Robinson",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crrobinson14/vue-rethinkdb"
+  },
   "npmignore": [
     "build"
   ],
