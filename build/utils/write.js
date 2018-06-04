@@ -7,9 +7,11 @@ function getSize(code) {
 }
 
 function write(dest, code) {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
         fs.writeFile(dest, code, err => {
-            if (err) return reject(err);
+            if (err) {
+                return reject(err);
+            }
             // eslint-disable-next-line no-console
             console.log(blue(dest) + ' ' + getSize(code));
             return resolve(code);

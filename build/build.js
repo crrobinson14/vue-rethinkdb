@@ -52,9 +52,11 @@ const bundleOptions = {
 function createBundle({ name: bundleName, env, format }) {
     return rollupBundle({
         env
-    }).then(function(bundle) {
+    }).then(bundle => {
         const options = Object.assign({}, bundleOptions);
-        if (format) options.format = format;
+        if (format) {
+            options.format = format;
+        }
         const code = bundle.generate(options).code;
         if (/min$/.test(bundleName)) {
             const minified = uglify.minify(code, {

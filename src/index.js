@@ -147,8 +147,8 @@ const RethinkDB = {
     },
 
     unsubscribeAll(vm) {
-        RethinkDB.options.log.debug('RethinkDB: Unsubscribing from all');
-        if (vm.$rethinkQueries) {
+        if (vm.$rethinkQueries && vm.$rethinkQueries.length > 0) {
+            RethinkDB.options.log.debug('RethinkDB: Unsubscribing from all');
             vm.$rethinkQueries.forEach(RethinkDB.unsubscribe);
             vm.$rethinkQueries.length = 0;
         }
