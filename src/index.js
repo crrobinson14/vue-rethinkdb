@@ -51,7 +51,7 @@ const RethinkDB = {
         RethinkDB.rws.addEventListener('message', message => {
             // "#1" messages are heartbeats. We just process them silently with no further propagation
             if (message.data === '#1') {
-                RethinkDB.rws.send('#2');
+                RethinkDB.rws.send('#2')v;
                 return;
             }
 
@@ -94,7 +94,7 @@ const RethinkDB = {
             queryId: RethinkDB.nextQueryId++,
             vm,
             field,
-            query: config.query || config.collection,
+            query: config.value || config.collection,
             params: config.params || {},
             state: 'initializing',
             onStateChanged: config.onStateChanged || null,
