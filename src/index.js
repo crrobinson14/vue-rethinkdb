@@ -51,7 +51,7 @@ const RethinkDB = {
         RethinkDB.rws.addEventListener('message', message => {
             // "#1" messages are heartbeats. We just process them silently with no further propagation
             if (message.data === '#1') {
-                RethinkDB.rws.send('#2')v;
+                RethinkDB.rws.send('#2');
                 return;
             }
 

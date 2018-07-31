@@ -1,5 +1,5 @@
 /*!
- * vue-rethinkdb v1.0.5
+ * vue-rethinkdb v1.0.8
  * (c) 2018 Chad Robinson
  * Released under the MIT License.
  */
@@ -318,7 +318,7 @@ var RethinkDB = {
             queryId: RethinkDB.nextQueryId++,
             vm: vm,
             field: field,
-            query: config.query || config.collection,
+            query: config.value || config.collection,
             params: config.params || {},
             state: 'initializing',
             onStateChanged: config.onStateChanged || null,
@@ -370,8 +370,8 @@ var RethinkDB = {
     },
 
     unsubscribeAll: function unsubscribeAll(vm) {
-        RethinkDB.options.log.debug('RethinkDB: Unsubscribing from all');
-        if (vm.$rethinkQueries) {
+        if (vm.$rethinkQueries && vm.$rethinkQueries.length > 0) {
+            RethinkDB.options.log.debug('RethinkDB: Unsubscribing from all');
             vm.$rethinkQueries.forEach(RethinkDB.unsubscribe);
             vm.$rethinkQueries.length = 0;
         }
