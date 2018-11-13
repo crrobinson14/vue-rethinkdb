@@ -1,6 +1,6 @@
 const mkdirp = require('mkdirp');
 const rollup = require('rollup').rollup;
-const vue = require('rollup-plugin-vue');
+const VuePlugin = require('rollup-plugin-vue').default;
 const jsx = require('rollup-plugin-jsx');
 const buble = require('rollup-plugin-buble');
 const replace = require('rollup-plugin-replace');
@@ -11,24 +11,21 @@ const uglify = require('uglify-js');
 // Make sure dist dir exists
 mkdirp('dist');
 
-const {
-    logError,
-    write,
-    banner,
-    name,
-    moduleName,
-    version,
-} = require('./utils');
+const { logError, write, banner, name, moduleName, version } = require('./utils');
 
 function rollupBundle({ env }) {
     return rollup({
-        entry: 'src/index.js',
+        input: 'src/index.js',
+        output: {
+            name,
+            moduleName,
+        },
         plugins: [
             node({
                 extensions: ['.js', '.jsx', '.vue']
             }),
             cjs(),
-            vue({
+            VuePlugin({
                 compileTemplate: true
             }),
             jsx({ factory: 'h' }),
@@ -46,7 +43,8 @@ const bundleOptions = {
     banner,
     exports: 'named',
     format: 'umd',
-    moduleName
+    moduleName,
+    name
 };
 
 function createBundle({ name: bundleName, env, format }) {
@@ -57,7 +55,9 @@ function createBundle({ name: bundleName, env, format }) {
         if (format) {
             options.format = format;
         }
-        const code = bundle.generate(options).code;
+
+        return bundle.generate(options);
+    }).then(({ code }) => {
         if (/min$/.test(bundleName)) {
             const minified = uglify.minify(code, {
                 output: {
