@@ -1,6 +1,6 @@
 {
   "name": "vue-rethinkdb",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "VueJS Plugin for RethinkDB",
   "main": "dist/vue-rethinkdb.common.js",
   "module": "dist/vue-rethinkdb.esm.js",
