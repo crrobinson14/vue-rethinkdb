@@ -278,6 +278,10 @@ const RethinkDB = {
 
             case 'state':
                 query.state = response.state;
+                if (query.state === 'initializing') {
+                    query.vm[query.field].length = 0;
+                }
+
                 if (query.onStateChanged) {
                     query.onStateChanged.call(query.vm, query.state);
                 }
