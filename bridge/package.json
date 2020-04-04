@@ -12,7 +12,7 @@
   "dependencies": {
     "express": "^4.16.2",
     "jsonwebtoken": "^8.2.0",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.3",
     "rethinkdb": "^2.3.3",
     "sc-framework-health-check": "^2.0.0",
     "sc-hot-reboot": "^1.0.0",
