@@ -83,11 +83,15 @@ public profile page for a user and his/her followers. We could just do the follo
 
 ```js
 <template>
+  <div>
     <h1>{{ user.firstName }} {{ user.lastName }}</h1>
     <h2>Followers:</h2>
     <div class="followers">
-        <div v-for="follower in followers" key="follower.id">{{ follower.firstName }} {{ follower.lastName }}</span>
+      <div v-for="follower in followers" key="follower.id">
+        {{ follower.firstName }} {{ follower.lastName }}
+      </div>
     </div>
+  </div>
 </template>
 
 <script>
