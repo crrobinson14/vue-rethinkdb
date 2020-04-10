@@ -330,7 +330,7 @@ const RethinkDB = {
     },
 
     /**
-     * Send a message to the server.
+     * Send a message to the server. Responses are ignored (fire and forget).
      *
      * @param {String} event - The event to send.
      * @param {Object} [data] - Optional additional data to send as a parameter.
