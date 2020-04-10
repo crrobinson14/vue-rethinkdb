@@ -55,12 +55,12 @@ const RethinkDB = {
                 return;
             }
 
-            if ((message.data || '').substr(0, 15) === '"primus::ping::') {
-                RethinkDB.rws.send(message.data.replace('ping', 'pong'));
+            const data = JSON.parse(message.data);
+
+            if (typeof data === 'string' && data.substr(0, 14) === 'primus::ping::') {
+                RethinkDB.rws.send(`"primus::pong::${new Date().getTime()}"`);
                 return;
             }
-
-            const data = JSON.parse(message.data);
 
             // emitAck requests go directly to their callers
             const request = RethinkDB.requests[data.rid];
@@ -83,6 +83,7 @@ const RethinkDB = {
         RethinkDB.rws.addEventListener('close', event => {
             const { code, reason } = event;
             RethinkDB.options.log.debug('RethinkDB: Connection closed', { code, reason });
+            RethinkDB.requests = {};
         });
 
         RethinkDB.rws.addEventListener('error', err => {
@@ -147,8 +148,7 @@ const RethinkDB = {
 
     subscribeAll() {
         RethinkDB.options.log.debug('RethinkDB: Subscribing to all');
-        Object.keys(RethinkDB.queries).forEach(queryId =>
-            RethinkDB.subscribe(RethinkDB.queries[queryId]));
+        Object.keys(RethinkDB.queries).forEach(queryId => RethinkDB.subscribe(RethinkDB.queries[queryId]));
 
         return Promise.resolve(true);
     },
