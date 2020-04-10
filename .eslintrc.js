@@ -8,18 +8,10 @@ module.exports = {
         browser: true,
     },
     extends: 'airbnb-base',
-    plugins: [
-        'html'
-    ],
+    plugins: [],
     globals: {},
     // Uncomment this block to use the Webpack resolver to check if imports are valid.
-    settings: {
-        'import/resolver': {
-            'webpack': {
-                'config': 'build/webpack.config.js'
-            }
-        }
-    },
+    settings: {},
     rules: {
         // Our rules are based on "AirBNB Base'. Below are our overrides.
         'indent': ['error', 4, { SwitchCase: 1 }], // 4-space indents

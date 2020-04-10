@@ -1,5 +1,12 @@
 # RethinkDB WebSocket Bridge
 
+:warning: **I no longer use SocketCluster myself, and will be rewriting this section to remove it soon.** SocketCluster
+is a great project but in the time since I last used it here it's gotten even more sophisticated and also more complex.
+There is actually no requirement in a project like this to use a cluster-aware backend - RethinkDB itself is already
+clustered and the WebSocket bridge is easy to scale in most cases just using traditional horizontal scaling. It may
+still be a good option if your project has complex needs, but for this module I'll be rewriting the bridge around a
+simpler approach.
+
 This module is based on the highly scalable, robust [SocketCluster](https://socketcluster.io/) framework. To use it,
 do the following:
 
