@@ -49,9 +49,14 @@ const RethinkDB = {
         });
 
         RethinkDB.rws.addEventListener('message', message => {
-            // "#1" messages are heartbeats. We just process them silently with no further propagation
+            // Silently handle SocketCluster and Primus heartbeats
             if (message.data === '#1') {
                 RethinkDB.rws.send('#2');
+                return;
+            }
+
+            if ((message.data || '').substr(0, 15) === '"primus::ping::') {
+                RethinkDB.rws.send(message.data.replace('ping', 'pong'));
                 return;
             }
 
@@ -73,6 +78,15 @@ const RethinkDB = {
 
             // Everything else is an error
             RethinkDB.options.log.error('RethinkDB: Unhandled WebSocket message', data);
+        });
+
+        RethinkDB.rws.addEventListener('close', event => {
+            const { code, reason } = event;
+            RethinkDB.options.log.debug('RethinkDB: Connection closed', { code, reason });
+        });
+
+        RethinkDB.rws.addEventListener('error', err => {
+            RethinkDB.options.log.debug('RethinkDB: Connection error', err);
         });
 
         setInterval(() => {
