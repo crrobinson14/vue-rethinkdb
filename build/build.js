@@ -1,6 +1,6 @@
 const mkdirp = require('mkdirp');
 const rollup = require('rollup').rollup;
-const VuePlugin = require('rollup-plugin-vue').default;
+const VuePlugin = require('rollup-plugin-vue');
 const jsx = require('rollup-plugin-jsx');
 const buble = require('rollup-plugin-buble');
 const replace = require('rollup-plugin-replace');

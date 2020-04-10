@@ -1,6 +1,6 @@
 /*!
- * vue-rethinkdb v1.0.9
- * (c) 2018 Chad Robinson
+ * vue-rethinkdb v1.1.1
+ * (c) 2020 Chad Robinson
  * Released under the MIT License.
  */
 
@@ -31,6 +31,42 @@ function __extends(d, b) {
     extendStatics(d, b);
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+
+function __values(o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) { return m.call(o); }
+    return {
+        next: function () {
+            if (o && i >= o.length) { o = void 0; }
+            return { value: o && o[i++], done: !o };
+        }
+    };
+}
+
+function __read(o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) { return o; }
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) { ar.push(r.value); }
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) { m.call(i); }
+        }
+        finally { if (e) { throw e.error; } }
+    }
+    return ar;
+}
+
+function __spread() {
+    var arguments$1 = arguments;
+
+    for (var ar = [], i = 0; i < arguments.length; i++)
+        { ar = ar.concat(__read(arguments$1[i])); }
+    return ar;
 }
 
 var Event = /** @class */ (function () {
@@ -79,7 +115,7 @@ var getGlobalWebSocket = function () {
 /**
  * Returns true if given argument looks like a WebSocket class
  */
-var isWebSocket = function (w) { return typeof w === 'function' && w.CLOSING === 2; };
+var isWebSocket = function (w) { return typeof w !== 'undefined' && !!w && w.CLOSING === 2; };
 var DEFAULT = {
     maxReconnectionDelay: 10000,
     minReconnectionDelay: 1000 + Math.random() * 4000,
@@ -87,12 +123,14 @@ var DEFAULT = {
     reconnectionDelayGrowFactor: 1.3,
     connectionTimeout: 4000,
     maxRetries: Infinity,
+    maxEnqueuedMessages: Infinity,
+    startClosed: false,
     debug: false,
 };
 var ReconnectingWebSocket = /** @class */ (function () {
     function ReconnectingWebSocket(url, protocols, options) {
-        if (options === void 0) { options = {}; }
         var _this = this;
+        if (options === void 0) { options = {}; }
         this._listeners = {
             error: [],
             message: [],
@@ -108,26 +146,25 @@ var ReconnectingWebSocket = /** @class */ (function () {
         /**
          * An event listener to be called when the WebSocket connection's readyState changes to CLOSED
          */
-        this.onclose = undefined;
+        this.onclose = null;
         /**
          * An event listener to be called when an error occurs
          */
-        this.onerror = undefined;
+        this.onerror = null;
         /**
          * An event listener to be called when a message is received from the server
          */
-        this.onmessage = undefined;
+        this.onmessage = null;
         /**
          * An event listener to be called when the WebSocket connection's readyState changes to OPEN;
          * this indicates that the connection is ready to send and receive data
          */
-        this.onopen = undefined;
+        this.onopen = null;
         this._handleOpen = function (event) {
             _this._debug('open event');
             var _a = _this._options.minUptime, minUptime = _a === void 0 ? DEFAULT.minUptime : _a;
             clearTimeout(_this._connectTimeout);
             _this._uptimeTimeout = setTimeout(function () { return _this._acceptOpen(); }, minUptime);
-            // @ts-ignore
             _this._ws.binaryType = _this._binaryType;
             // send enqueued messages (messages sent before websocket open event)
             _this._messageQueue.forEach(function (message) { return _this._ws.send(message); });
@@ -168,6 +205,9 @@ var ReconnectingWebSocket = /** @class */ (function () {
         this._url = url;
         this._protocols = protocols;
         this._options = options;
+        if (this._options.startClosed) {
+            this._shouldReconnect = false;
+        }
         this._connect();
     }
     Object.defineProperty(ReconnectingWebSocket, "CONNECTING", {
@@ -233,7 +273,6 @@ var ReconnectingWebSocket = /** @class */ (function () {
         set: function (value) {
             this._binaryType = value;
             if (this._ws) {
-                // @ts-ignore
                 this._ws.binaryType = value;
             }
         },
@@ -303,7 +342,12 @@ var ReconnectingWebSocket = /** @class */ (function () {
          * The current state of the connection; this is one of the Ready state constants
          */
         get: function () {
-            return this._ws ? this._ws.readyState : ReconnectingWebSocket.CONNECTING;
+            if (this._ws) {
+                return this._ws.readyState;
+            }
+            return this._options.startClosed
+                ? ReconnectingWebSocket.CLOSED
+                : ReconnectingWebSocket.CONNECTING;
         },
         enumerable: true,
         configurable: true
@@ -362,8 +406,11 @@ var ReconnectingWebSocket = /** @class */ (function () {
             this._ws.send(data);
         }
         else {
-            this._debug('enqueue', data);
-            this._messageQueue.push(data);
+            var _a = this._options.maxEnqueuedMessages, maxEnqueuedMessages = _a === void 0 ? DEFAULT.maxEnqueuedMessages : _a;
+            if (this._messageQueue.length < maxEnqueuedMessages) {
+                this._debug('enqueue', data);
+                this._messageQueue.push(data);
+            }
         }
     };
     /**
@@ -374,6 +421,26 @@ var ReconnectingWebSocket = /** @class */ (function () {
             // @ts-ignore
             this._listeners[type].push(listener);
         }
+    };
+    ReconnectingWebSocket.prototype.dispatchEvent = function (event) {
+        var e_1, _a;
+        var listeners = this._listeners[event.type];
+        if (listeners) {
+            try {
+                for (var listeners_1 = __values(listeners), listeners_1_1 = listeners_1.next(); !listeners_1_1.done; listeners_1_1 = listeners_1.next()) {
+                    var listener = listeners_1_1.value;
+                    this._callEventListener(event, listener);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (listeners_1_1 && !listeners_1_1.done && (_a = listeners_1.return)) { _a.call(listeners_1); }
+                }
+                finally { if (e_1) { throw e_1.error; } }
+            }
+        }
+        return true;
     };
     /**
      * Removes an event listener
@@ -394,12 +461,12 @@ var ReconnectingWebSocket = /** @class */ (function () {
         if (this._options.debug) {
             // not using spread because compiled version uses Symbols
             // tslint:disable-next-line
-            console.log.apply(console, ['RWS>'].concat(args));
+            console.log.apply(console, __spread(['RWS>'], args));
         }
     };
     ReconnectingWebSocket.prototype._getNextDelay = function () {
         var _a = this._options, _b = _a.reconnectionDelayGrowFactor, reconnectionDelayGrowFactor = _b === void 0 ? DEFAULT.reconnectionDelayGrowFactor : _b, _c = _a.minReconnectionDelay, minReconnectionDelay = _c === void 0 ? DEFAULT.minReconnectionDelay : _c, _d = _a.maxReconnectionDelay, maxReconnectionDelay = _d === void 0 ? DEFAULT.maxReconnectionDelay : _d;
-        var delay = minReconnectionDelay;
+        var delay = 0;
         if (this._retryCount > 0) {
             delay =
                 minReconnectionDelay * Math.pow(reconnectionDelayGrowFactor, this._retryCount - 1);
@@ -425,7 +492,7 @@ var ReconnectingWebSocket = /** @class */ (function () {
             if (typeof url === 'string') {
                 return Promise.resolve(url);
             }
-            if (url.then) {
+            if (!!url.then) {
                 return url;
             }
         }
@@ -453,14 +520,12 @@ var ReconnectingWebSocket = /** @class */ (function () {
             .then(function (url) {
             // close could be called before creating the ws
             if (_this._closeCalled) {
-                _this._connectLock = false;
                 return;
             }
             _this._debug('connect', { url: url, protocols: _this._protocols });
             _this._ws = _this._protocols
                 ? new WebSocket(url, _this._protocols)
                 : new WebSocket(url);
-            // @ts-ignore
             _this._ws.binaryType = _this._binaryType;
             _this._connectLock = false;
             _this._addListeners();
@@ -806,6 +871,10 @@ var RethinkDB = {
 
             case 'state':
                 query.state = response.state;
+                if (query.state === 'initializing') {
+                    query.vm[query.field].length = 0;
+                }
+
                 if (query.onStateChanged) {
                     query.onStateChanged.call(query.vm, query.state);
                 }
