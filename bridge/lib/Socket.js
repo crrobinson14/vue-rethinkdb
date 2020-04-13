@@ -1,121 +1,137 @@
-const jwt = require('jsonwebtoken');
+const Socket = module.exports = {};
 const DB = require('./DB');
 const Log = require('./Log');
+const operations = require('./operations');
+const queries = require('./queries');
+const values = require('./values');
 
-// Set this to enable authentication. Once enabled, query subscriptions will be rejected for unauthenticated users.
-const jwtSecret = process.env.JWT_SECRET;
-
-const reportError = (res, message, extraData) => {
-    Log.error(message, extraData);
-    res(message);
+// Send an error report to a client
+const reportError = (spark, message, extraData) => {
+  console.error(spark.id, message, extraData);
+  spark.write(message);
 };
 
-const reportEvent = (res, message, extraData) => {
-    Log.info(message, extraData);
-    res(null, message);
+// Send a regular message to the client
+const reportEvent = (spark, message, extraData) => {
+  console.log(spark.id, message, extraData);
+  spark.write(message);
 };
 
-const Socket = {
-    init() {
-        return DB.connect();
-    },
+Socket.handleConnection = spark => {
+  console.log(spark.id, 'Connection from', spark.address, spark.request.decodedSessionToken);
 
-    manage(socket) {
-        socket.logIdent = [socket.remoteAddress, socket.remotePort].join(':');
-        Log.info(`${socket.id} Connection from ${socket.logIdent}`);
+  // Monkey-patch in a session tracker. If a session token was provided, we make a structure with its contents
+  // and a boolean indicating the session is valid. Otherwise, we have an empty object and valid === false.
+  spark.session = { ...spark.request.decodedSessionToken, valid: true } || { valid: false };
 
-        // A few things we use later
-        socket.feeds = {};
-        socket.session = {
-            valid: false,
-            userId: 0,
-        };
+  // Monkey-patch in a tracker for live-query changefeeds the client has subscribed to.
+  spark.feeds = {};
 
-        socket.on('auth', (params, res) => {
-            if (!jwtSecret) {
-                reportError(res, 'Authentication failure', 'JWT_SECRET not set');
-                return;
-            }
+  // Process a message from the client
+  spark.on('data', message => {
+    const { rid, event, data } = message;
 
-            Log.info(`${socket.id} Authenticating... ${socket.logIdent}`);
-            try {
-                const decoded = jwt.verify(params.authToken, jwtSecret, { algorithm: 'HS256' });
-                Object.assign(socket.session, decoded, { valid: true });
-                Log.info(`${socket.id} Authenticated Successfully, session data`, socket.session);
-
-                res(null, socket.session);
-            } catch (e) {
-                reportError(res, e.message, e);
-            }
-        });
-
-        socket.on('subscribeQuery', (request, res) => {
-            // If authentication is required, block anonymous requests
-            if (jwtSecret && (!socket.session || !socket.session.valid)) {
-                reportError(res, 'Invalid query: authentication required', request);
-                return;
-            }
-
-            // We need a queryId, and it needs to be unique
-            const { queryId, query, params } = request;
-            if (!queryId || socket.feeds[queryId]) {
-                reportError(res, `Invalid query: missing or duplicate queryId: ${queryId}`, request);
-                return;
-            }
-
-            // And the query has to exist...
-            if (!(query in DB.queries)) {
-                reportError(res, `Unknown query: ${query}`, request);
-                return;
-            }
-
-            // We need to try/catch AND promise.catch() because some REQL errors can occur outside the Promise.
-            try {
-                DB.queries[query](socket, params || {})
-                    .run(DB.conn)
-                    .then(cursor => {
-                        socket.feeds[queryId] = cursor;
-                        cursor.each((e, change) => socket.emit('queryResponse', { queryId, change }));
-                    })
-                    .catch(e => reportError(res, `Invalid query: ${e.message}`, request));
-            } catch (e) {
-                reportError(res, `Invalid query: ${e.message}`, request);
-            }
-        });
-
-        socket.on('unsubscribeQuery', (params, res) => {
-            const { queryId } = params;
-            const feed = socket.feeds[queryId] || null;
-
-            if (feed) {
-                reportEvent(res, `Unsubscribed from query ID ${queryId}`, params);
-                feed.close();
-                delete socket.feeds[queryId];
-            } else {
-                reportError(res, `Unknown query ID ${queryId}`, params);
-            }
-        });
-
-        // All other SocketCluster mechanisms will work here as well. For instance, to generically subscribe to all
-        // messages from clients, implement the following listener:
-        // socket.on('message', async params => {
-        //     if (params !== '#2') {
-        //         Log.info('Generic message from client', params);
-        //     }
-        //
-        //     // Do something here
-        // });
-
-        socket.on('error', e => {
-            Log.info(`${socket.id} Connection error for ${socket.logIdent}: ${e.message}`);
-        });
-
-        socket.on('disconnect', () => {
-            const feeds = Object.values(socket.feeds);
-            Log.info(`${socket.id} Disconnected from ${socket.logIdent}, closing ${feeds.length} feed(s)`);
-            feeds.map(feed => feed.close());
-        });
+    // If the message type indicates the client wants to call an API function, call that directly. This only
+    // works if we define a handler for the event the client sends. Otherwise we fall through and eventually
+    // output "unhandled client message" below as a reminder to the developer that something is not implemented.
+    // Each API handler is passed a reference to the DB (so they don't need to import it / avoids circular
+    // references), the spark, the request ID from the client (rid), and the data the client sent.
+    if (operations[event]) {
+      operations[event](spark, rid, data);
+      return;
     }
-};
 
-module.exports = Socket;
+    switch (event) {
+      case 'handshake':
+        console.log(spark.id, 'Handshake received, replying...');
+        spark.write({ rid, event: 'handshake' });
+        break;
+
+      case 'once': {
+        // We need a queryId, and it needs to be unique
+        const { queryId, type, query, params } = data;
+        if (!queryId || spark.feeds[queryId]) {
+          reportError(spark, `Invalid query: missing or duplicate queryId: ${queryId}`, message);
+          return;
+        }
+
+        // And the query has to exist...
+        const handlers = type === 'collection' ? queries : values;
+        if (!(query in handlers)) {
+          reportError(spark, `Unknown query: ${query}`, message);
+          return;
+        }
+
+        try {
+          handlers[query](spark, params || {})
+            .run(DB.conn)
+            .then(cursor => {
+              spark.feeds[queryId] = cursor;
+              cursor.each((e, change) => spark.write({
+                event: 'queryResponse',
+                data: { type, queryId, change }
+              }));
+            })
+            .catch(e => reportError(spark, `Invalid query: ${e.message}`, message));
+        } catch (e) {
+          reportError(spark, `Invalid query: ${e.message}`, message);
+        }
+      }
+        break;
+
+      case 'subscribe': {
+        // We need a queryId, and it needs to be unique
+        const { queryId, type, query, params } = data;
+        if (!queryId || spark.feeds[queryId]) {
+          reportError(spark, `Invalid query: missing or duplicate queryId: ${queryId}`, message);
+          return;
+        }
+
+        // And the query has to exist...
+        const handlers = type === 'collection' ? queries : values;
+        if (!(query in handlers)) {
+          reportError(spark, `Unknown query: ${query}`, message);
+          return;
+        }
+
+        try {
+          handlers[query](spark, params || {})
+            .run(DB.conn)
+            .then(cursor => {
+              spark.feeds[queryId] = cursor;
+              cursor.each((e, change) => spark.write({
+                event: 'queryResponse',
+                data: { type, queryId, change }
+              }));
+            })
+            .catch(e => reportError(spark, `Invalid query: ${e.message}`, message));
+        } catch (e) {
+          reportError(spark, `Invalid query: ${e.message}`, message);
+        }
+      }
+        break;
+
+      case 'unsubscribe': {
+        const { queryId } = data;
+        const feed = spark.feeds[queryId] || null;
+
+        if (feed) {
+          reportEvent(spark, `Unsubscribed from query ID ${queryId}`, message);
+          feed.close();
+          delete spark.feeds[queryId];
+        } else {
+          reportError(spark, `Unknown query ID ${queryId}`, message);
+        }
+      }
+        break;
+
+      default:
+        console.log(spark.id, 'Unhandled client message', message);
+        break;
+    }
+  });
+
+  spark.on('end', () => {
+    console.log(spark.id, 'Disconnected');
+  });
+};

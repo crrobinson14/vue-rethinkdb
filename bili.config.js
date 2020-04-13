@@ -1,11 +1,11 @@
 module.exports = {
-    banner: false,
-    output: {
-        extractCSS: false,
-    },
-    plugins: {
-        vue: {
-            css: true
-        }
+  banner: false,
+  output: {
+    extractCSS: false,
+  },
+  plugins: {
+    vue: {
+      css: true
     }
+  }
 };

@@ -1,29 +1,29 @@
+const DB = module.exports = {};
 const r = require('rethinkdb');
 const Log = require('./Log');
 
-const DB = {
-    queries: require('./Queries'),
+if (!process.env.DB_HOST) {
+  console.error('You must set the DB_HOST environment variable');
+  process.exit(-1);
+}
 
-    conn: null,
+DB.conn = null;
 
-    async connect() {
-        try {
-            Log.info('   >> Connecting to RethinkDB...');
+// You will almost certainly want to make the error handling here smarter. See
+// https://rethinkdb.com/api/javascript/event_emitter for events you can handle.
+DB.connect = async () => {
+  try {
+    Log.info('Connecting to RethinkDB...');
+    DB.conn = await r.connect({ host: process.env.DB_HOST, port: process.env.DB_PORT || 28015 });
 
-            const host = process.env.RETHINKDB_HOST || 'localhost';
-            const port = process.env.RETHINKDB_PORT || 28015;
-            const db = process.env.RETHINKDB_DB || undefined;
-            const user = process.env.RETHINKDB_USER || undefined;
-            const password = process.env.RETHINKDB_PASSWORD || undefined;
+    DB.conn.on('close', e => {
+      console.error('RethinkDB connection closed', e);
+      process.exit(-1);
+    });
 
-            DB.conn = await r.connect({ host, port, db, user, password });
-
-            Log.info('   >> RethinkDB Connected!');
-        } catch (error) {
-            console.error(error);
-            process.exit(-1);
-        }
-    }
+    Log.info('RethinkDB Connected!');
+  } catch (error) {
+    Log.error(error);
+    process.exit(-1);
+  }
 };
-
-module.exports = DB;

@@ -1,24 +1,20 @@
 {
-  "name": "rethinkdb-ws-bridge",
-  "version": "1.0.0",
-  "description": "",
+  "name": "vue-rethinkdb-bridge",
+  "version": "2.0.0",
+  "description": "Server-side bridge layer for Vue RethinkDB",
+  "author": "Chad Robinson",
+  "license": "ISC",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "start:docker": "node dockerwait.js && node ${SOCKETCLUSTER_MASTER_CONTROLLER:-server.js}"
+    "start:watch": "./node_modules/nodemon/bin/nodemon.js server.js",
+    "start:docker": "./node_modules/nodemon/bin/nodemon.js /usr/src/app/server.js"
   },
-  "author": "Chad Robinson",
-  "license": "ISC",
   "dependencies": {
-    "express": "^4.16.2",
-    "jsonwebtoken": "^8.2.0",
-    "minimist": "^1.2.0",
-    "rethinkdb": "^2.3.3",
-    "sc-framework-health-check": "^2.0.0",
-    "sc-hot-reboot": "^1.0.0",
-    "scc-broker-client": "^2.1.2",
-    "serve-static": "^1.13.2",
-    "socketcluster": "^10.1.0",
-    "winston": "^2.4.0"
+    "jsonwebtoken": "^8.5.1",
+    "primus": "^7.3.4",
+    "rethinkdb": "^2.4.2",
+    "winston": "^3.2.1",
+    "ws": "^7.2.3"
   }
 }
